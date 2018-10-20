@@ -22,7 +22,7 @@ spec:
       containers:
       - name: artifact-deployment
         image: docker.io/tremolosecurity/kubernetes-artifact-deployment:latest
-        command: ["java", "-jar", "/usr/local/artifactdeploy/artifact-deploy.jar",  "-extraCertsPath","/etc/extracerts","-installScriptURL", "https://raw.githubusercontent.com/mlbiam/openunison-qs-kubernetes/activedirectory/src/main/js/deploy.js","-kubernetesURL","https://kubernetes.default.svc.cluster.local","-rootCaPath","/var/run/secrets/kubernetes.io/serviceaccount/ca.crt","-secretsPath","/etc/secrets/input.props","-tokenPath","/var/run/secrets/kubernetes.io/serviceaccount/token","-deploymentTemplate","https://raw.githubusercontent.com/mlbiam/openunison-qs-kubernetes/activedirectory/src/main/yaml/openunison.yaml"]
+        command: ["java", "-jar", "/usr/local/artifactdeploy/artifact-deploy.jar",  "-extraCertsPath","/etc/extracerts","-installScriptURL", "https://raw.githubusercontent.com/mlbiam/openunison-k8s-login-activedirectory/master/src/main/js/deploy.js","-kubernetesURL","https://kubernetes.default.svc.cluster.local","-rootCaPath","/var/run/secrets/kubernetes.io/serviceaccount/ca.crt","-secretsPath","/etc/secrets/input.props","-tokenPath","/var/run/secrets/kubernetes.io/serviceaccount/token","-deploymentTemplate","https://raw.githubusercontent.com/mlbiam/openunison-k8s-login-activedirectory/master/src/main/yaml/openunison.yaml"]
         volumeMounts:
           - name: secrets-dir
             mountPath: "/etc/secrets"

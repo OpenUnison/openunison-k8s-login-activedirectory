@@ -13,3 +13,4 @@ buildNumber.properties
 .settings/
 .tern-project
 .DS_Store
+.factorypath
