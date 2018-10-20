@@ -1,0 +1,214 @@
+<application name="scale" azTimeoutMillis="30000" >
+  <urls>
+
+    <url regex="false" authChain="enterprise_idp" overrideHost="true" overrideReferer="true">
+      <host>#[OU_HOST]</host>
+      <filterChain>
+        <filter class="com.tremolosecurity.prelude.filters.CompleteLogin" />
+      </filterChain>
+      <uri>/login/ldap</uri>
+      <results>
+        <auFail>Default Login Failure</auFail>
+        <azFail>Default Login Failure</azFail>
+      </results>
+      <azRules>
+        <rule scope="dn" constraint="o=Tremolo" />
+      </azRules>
+    </url>
+    <!-- The regex attribute defines if the proxyTo tag should be interpreted with a regex or not -->
+    <!-- The authChain attribute should be the name of an authChain -->
+    <url regex="true" authChain="LoginService" overrideHost="true" overrideReferer="true">
+      <!-- Any number of host tags may be specified to allow for an application to work on multiple hosts.  Additionally an asterick (*) can be specified to make this URL available for ALL hosts -->
+      <host>#[OU_HOST]</host>
+      <!-- The filterChain allows for transformations of the request such as manipulating attributes and injecting headers -->
+      <filterChain>
+        <!--<filter class="com.tremolosecurity.prelude.filters.LoginTest">
+          <param name="logoutURI" value="/logout"/>
+        </filter>-->
+        <filter class="com.tremolosecurity.prelude.filters.StopProcessing" />
+      </filterChain>
+      <!-- The URI (aka path) of this URL -->
+      <uri>^/$</uri>
+      <!-- Tells OpenUnison how to reach the downstream application.  The ${} lets you set any request variable into the URI, but most of the time ${fullURI} is sufficient -->
+      <proxyTo>http://dnm${fullURI}</proxyTo>
+      <!-- List the various results that should happen -->
+      <results>
+        <azSuccess>ScaleJSRedirect</azSuccess>
+        <auFail>Default Login Failure</auFail>
+        <azFail>Default Login Failure</azFail>
+      </results>
+      <!-- Determine if the currently logged in user may access the resource.  If ANY rule succeeds, the authorization succeeds.
+      The scope may be one of group, dn, filter, dynamicGroup or custom
+      The constraint identifies what needs to be satisfied for the authorization to pass and is dependent on the scope:
+        * group - The DN of the group in OpenUnison's virtual directory (must be an instance of groupOfUniqueNames)
+        * dn - The base DN of the user or users in OpenUnison's virtual directory
+        * dynamicGroup - The DN of the dynamic group in OpenUnison's virtual directory (must be an instance of groupOfUrls)
+        * custom - An implementation of com.tremolosecurity.proxy.az.CustomAuthorization -->
+      <azRules>
+        <rule scope="dn" constraint="o=Tremolo" />
+      </azRules>
+    </url>
+    <url regex="false" authChain="LoginService" overrideHost="true" overrideReferer="true">
+      <!-- Any number of host tags may be specified to allow for an application to work on multiple hosts.  Additionally an asterick (*) can be specified to make this URL available for ALL hosts -->
+      <host>#[OU_HOST]</host>
+      <!-- The filterChain allows for transformations of the request such as manipulating attributes and injecting headers -->
+      <filterChain>
+        <filter class="com.tremolosecurity.prelude.filters.StopProcessing" />
+      </filterChain>
+      <!-- The URI (aka path) of this URL -->
+      <uri>/logout</uri>
+      <!-- Tells OpenUnison how to reach the downstream application.  The ${} lets you set any request variable into the URI, but most of the time ${fullURI} is sufficient -->
+      <proxyTo>http://dnm${fullURI}</proxyTo>
+      <!-- List the various results that should happen -->
+      <results>
+        <azSuccess>Logout</azSuccess>
+      </results>
+      <!-- Determine if the currently logged in user may access the resource.  If ANY rule succeeds, the authorization succeeds.
+                The scope may be one of group, dn, filter, dynamicGroup or custom
+                The constraint identifies what needs to be satisfied for the authorization to pass and is dependent on the scope:
+                  * group - The DN of the group in OpenUnison's virtual directory (must be an instance of groupOfUniqueNames)
+                  * dn - The base DN of the user or users in OpenUnison's virtual directory
+                  * dynamicGroup - The DN of the dynamic group in OpenUnison's virtual directory (must be an instance of groupOfUrls)
+                  * custom - An implementation of com.tremolosecurity.proxy.az.CustomAuthorization -->
+      <azRules>
+        <rule scope="dn" constraint="o=Tremolo" />
+      </azRules>
+    </url>
+
+    <url regex="false" authChain="LoginService" overrideHost="true" overrideReferer="true">
+      <host>#[OU_HOST]</host>
+      <filterChain>
+
+      </filterChain>
+      <uri>/scale</uri>
+
+      <results>
+        <azSuccess>
+        </azSuccess>
+        <auFail>Default Login Failure</auFail>
+        <azFail>Default Login Failure</azFail>
+      </results>
+      <azRules>
+        <rule scope="dn" constraint="o=Tremolo" />
+      </azRules>
+    </url>
+    <url regex="false" authChain="LoginService" overrideHost="true" overrideReferer="true">
+      <host>#[OU_HOST]</host>
+      <filterChain>
+        <filter class="com.tremolosecurity.scalejs.ws.ScaleMain">
+          <param name="displayNameAttribute" value="mail"/>
+          <param name="frontPage.title" value="Kubernetes Access Portal"/>
+          <param name="frontPage.text" value="Use this portal to create and access namespaces in Kubernetes"/>
+          <param name="canEditUser" value="false"/>
+          <param name="workflowName" value=""/>
+          <param name="warnMinutesLeft" value="5" />
+          <param name="attributeNames" value="uid"/>
+          <param name="uid.displayName" value="Login ID"/>
+          <param name="uid.readOnly" value="true"/>
+          <param name="attributeNames" value="givenname"/>
+          <param name="givenname.displayName" value="First Name"/>
+          <param name="givenname.readOnly" value="true"/>
+          <param name="attributeNames" value="sn"/>
+          <param name="sn.displayName" value="Last Name"/>
+          <param name="sn.readOnly" value="true"/>
+          <param name="attributeNames" value="mail"/>
+          <param name="mail.displayName" value="Email Address"/>
+          <param name="mail.readOnly" value="true"/>
+          <param name="attributeNames" value="mail"/>
+          <param name="mail.displayName" value="Email Address"/>
+          <param name="mail.readOnly" value="true"/>
+          <param name="uidAttributeName" value="uid"/>
+          <param name="roleAttribute" value="groups"/>
+          <param name="approvalAttributeNames" value="uid"/>
+          <param name="approvalAttributeNames" value="mail"/>
+          <param name="approvals.uid" value="Login ID"/>
+          <param name="approvals.mail" value="Email Address"/>
+          <param name="showPortalOrgs" value="false"/>
+          <param name="logoutURL" value="/logout"/>
+          <param name="canDelegate" value="yes" />
+          <param name="canPreApprove" value="yes" />
+
+        </filter>
+      </filterChain>
+      <uri>/scale/main</uri>
+      <results>
+        <azSuccess>
+        </azSuccess>
+        <auFail>Default Login Failure</auFail>
+        <azFail>Default Login Failure</azFail>
+      </results>
+      <azRules>
+        <rule scope="dn" constraint="o=Tremolo" />
+      </azRules>
+    </url>
+    
+
+            <url regex="false" authChain="LoginService" overrideHost="false" overrideReferer="false">
+                <host>#[OU_HOST]</host>
+                <filterChain>
+
+                </filterChain>
+                <uri>/k8stoken</uri>
+
+                <results>
+                    <auSuccess></auSuccess>
+                    <auFail>Default Login Failure</auFail>
+                    <azSuccess></azSuccess>
+                    <azFail>PrivilegedRequest</azFail>
+                </results>
+                <azRules>
+                    <rule scope="filter" constraint="(groups=k8s-*)"/>
+                </azRules>
+            </url>
+
+            <url regex="false" authChain="LoginService" overrideHost="false" overrideReferer="false">
+                <host>#[OU_HOST]</host>
+                <filterChain>
+                  <filter class="com.tremolosecurity.scalejs.token.ws.ScaleToken">
+                  <param name="displayNameAttribute" value="mail"/>
+                  <param name="frontPage.title" value="Kubernetes kubectl command"/>
+                  <param name="frontPage.text" value="First install the certificates for Kubernetes and OpenUnison into your system's trust store, then use this kubectl command to set your user in .kubectl/config"/>
+                  <param name="logoutURL" value="/logout"/>
+                  <param name="homeURL" value="/scale/index.html"/>
+                  <param name="warnMinutesLeft" value="5" />>
+                  <param name="tokenClassName" value="com.tremolosecurity.scalejs.KubectlTokenLoader"/>
+                  <param name="uidAttributeName" value="uid"/>
+                  <param name="kubectlUsage" value="Run the kubectl command to set your user-context and server connection" />
+                  <param name="k8sCaCertName" value="k8s-master"/>
+                  <param name="unisonCaCertName" value="unison-ca"/>
+                  <param name="kubectlTemplate" value="kubectl config set-cluster kubernetes --server=#[K8S_URL]  &amp;&amp; kubectl config set-context kubernetes --cluster=kubernetes --user=$user_id$ &amp;&amp; kubectl config set-credentials $user_id$  --auth-provider=oidc --auth-provider-arg=idp-issuer-url=$token.claims.issuer$ --auth-provider-arg=client-id=$token.trustName$ --auth-provider-arg=refresh-token=$token.refreshToken$  --auth-provider-arg=id-token=$token.encodedIdJSON$ &amp;&amp; kubectl config use-context kubernetes" />
+                </filter>
+                </filterChain>
+                <uri>/k8stoken/token</uri>
+
+                <results>
+                    <auSuccess></auSuccess>
+                    <auFail>Default Login Failure</auFail>
+                    <azSuccess></azSuccess>
+                    <azFail>PrivilegedRequest</azFail>
+                </results>
+                <azRules>
+                    <rule scope="filter" constraint="(groups=k8s-*)"/>
+                </azRules>
+            </url>
+
+
+  </urls>
+  <!-- The cookie configuration determines how sessions are managed for this application -->
+  <cookieConfig>
+    <!-- The name of the session cookie for this application.  Applications that want SSO between them should have the same cookie name -->
+      <sessionCookieName>tremolosession</sessionCookieName>
+    <!-- The domain of component of the cookie -->
+    <domain>#[OU_COOKIE_DOMAIN]</domain>
+    <!-- The URL that OpenUnison will interpret as the URL to end the session -->
+    <logoutURI>/logout</logoutURI>
+    <!-- The name of the AES-256 key in the keystore to use to encrypt this session -->
+    <keyAlias>session-unison</keyAlias>
+    <!-- If set to true, the cookie's secure flag is set to true and the browser will only send this cookie over https connections -->
+    <secure>false</secure>
+    <!-- The number of secconds that the session should be allowed to be idle before no longer being valid -->
+    <timeout>900</timeout>
+    <!-- required but ignored -->
+    <scope>-1</scope>
+  </cookieConfig>
+</application>

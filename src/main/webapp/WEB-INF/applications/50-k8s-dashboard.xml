@@ -1,0 +1,34 @@
+<application name="k8s" azTimeoutMillis="30000" >
+  <urls>
+    <url regex="false" authChain="LoginService" overrideHost="true" overrideReferer="true">
+      <host>#[K8S_DASHBOARD_HOST]</host>
+      <filterChain>
+      </filterChain>
+      <uri>/</uri>
+      <proxyTo>https://kubernetes-dashboard.kube-system.svc.cluster.local${fullURI}</proxyTo>
+      <results>
+        <azSuccess>oauth2bearer</azSuccess>
+      </results>
+      <azRules>
+        <rule scope="filter" constraint="(groups=k8s-*)" />
+      </azRules>
+    </url>
+  </urls>
+  <!-- The cookie configuration determines how sessions are managed for this application -->
+  <cookieConfig>
+    <!-- The name of the session cookie for this application.  Applications that want SSO between them should have the same cookie name -->
+      <sessionCookieName>tremolosession</sessionCookieName>
+    <!-- The domain of component of the cookie -->
+    <domain>#[OU_COOKIE_DOMAIN]</domain>
+    <!-- The URL that OpenUnison will interpret as the URL to end the session -->
+    <logoutURI>/logout</logoutURI>
+    <!-- The name of the AES-256 key in the keystore to use to encrypt this session -->
+    <keyAlias>session-unison</keyAlias>
+    <!-- If set to true, the cookie's secure flag is set to true and the browser will only send this cookie over https connections -->
+    <secure>false</secure>
+    <!-- The number of secconds that the session should be allowed to be idle before no longer being valid -->
+    <timeout>900</timeout>
+    <!-- required but ignored -->
+    <scope>-1</scope>
+  </cookieConfig>
+  </application>
