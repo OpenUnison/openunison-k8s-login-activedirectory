@@ -209,7 +209,7 @@ spec:
           successThreshold: 1
           timeoutSeconds: 10
         name: openunison
-        serviceAccountName: openunison
+        serviceAccount: openunison
         ports:
         - containerPort: 8080
           name: http
