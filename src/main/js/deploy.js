@@ -221,85 +221,9 @@ k8s.postWS('/api/v1/namespaces',JSON.stringify(ouNS));
 print("Create openunison service account");
 
 k8s.postWS('/api/v1/namespaces/openunison/serviceaccounts',JSON.stringify({"apiVersion":"v1","kind":"ServiceAccount","metadata":{"creationTimestamp":null,"name":"openunison"}}));
-res = k8s.callWS('/api/v1/namespaces/openunison/serviceaccounts/openunison');
-tokenName = JSON.parse(res.data).secrets[0].name;
-res = k8s.callWS("/api/v1/namespaces/openunison/secrets/" + tokenName);
-token = new java.lang.String(java.util.Base64.getDecoder().decode(JSON.parse(res.data).data.token));
-
-print("Creating RBAC Bindings");
-
-rbac = {
-    "kind": "ClusterRoleBinding",
-    "apiVersion": "rbac.authorization.k8s.io/v1",
-    "metadata": {
-      "name": "openunison-cluster-administrators"
-    },
-    "subjects": [
-      {
-        "kind": "Group",
-        "name": "k8s-cluster-administrators",
-        "apiGroup": "rbac.authorization.k8s.io"
-      },
-      {
-        "kind": "ServiceAccount",
-        "name": "openunison",
-        "namespace": "openunison"
-      }
-    ],
-    "roleRef": {
-      "kind": "ClusterRole",
-      "name": "cluster-admin",
-      "apiGroup": "rbac.authorization.k8s.io"
-    }
-  };
-
-k8s.postWS("/apis/rbac.authorization.k8s.io/v1/clusterrolebindings",JSON.stringify(rbac));
-
-rbac = {
-    "kind": "ClusterRole",
-    "apiVersion": "rbac.authorization.k8s.io/v1",
-    "metadata": {
-      "name": "list-namespaces"
-    },
-    "rules": [
-      {
-        "apiGroups": [
-          ""
-        ],
-        "resources": [
-          "namespaces"
-        ],
-        "verbs": [
-          "list"
-        ]
-      }
-    ]
-  };
-
-k8s.postWS("/apis/rbac.authorization.k8s.io/v1/clusterroles",JSON.stringify(rbac));
-
-rbac = {
-    "kind": "ClusterRoleBinding",
-    "apiVersion": "rbac.authorization.k8s.io/v1",
-    "metadata": {
-      "name": "openunison-cluster-list-namespaces"
-    },
-    "subjects": [
-      {
-        "kind": "Group",
-        "name": "users",
-        "apiGroup": "rbac.authorization.k8s.io"
-      }
-    ],
-    "roleRef": {
-      "kind": "ClusterRole",
-      "name": "list-namespaces",
-      "apiGroup": "rbac.authorization.k8s.io"
-    }
-  };
 
 
-k8s.postWS("/apis/rbac.authorization.k8s.io/v1/clusterrolebindings",JSON.stringify(rbac));
+
 
 print("Create Ingress TLS Secret");
 
@@ -322,7 +246,6 @@ k8s.postWS('/api/v1/namespaces/openunison/secrets',JSON.stringify(ingressSecret)
 
 print("Create OpenUnison Secret");
 
-inProp["K8S_TOKEN"] = token;
 
 ouSecrets = {
     "apiVersion":"v1",

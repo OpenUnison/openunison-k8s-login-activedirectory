@@ -125,8 +125,8 @@
           <param name="approvals.mail" value="Email Address"/>
           <param name="showPortalOrgs" value="false"/>
           <param name="logoutURL" value="/logout"/>
-          <param name="canDelegate" value="yes" />
-          <param name="canPreApprove" value="yes" />
+          <param name="canDelegate" value="no" />
+          <param name="canPreApprove" value="no" />
 
         </filter>
       </filterChain>
@@ -157,7 +157,7 @@
                     <azFail>PrivilegedRequest</azFail>
                 </results>
                 <azRules>
-                    <rule scope="filter" constraint="(groups=k8s-*)"/>
+                    <rule scope="dn" constraint="o=Tremolo"/>
                 </azRules>
             </url>
 
@@ -188,7 +188,7 @@
                     <azFail>PrivilegedRequest</azFail>
                 </results>
                 <azRules>
-                    <rule scope="filter" constraint="(groups=k8s-*)"/>
+                    <rule scope="dn" constraint="o=Tremolo"/>
                 </azRules>
             </url>
 

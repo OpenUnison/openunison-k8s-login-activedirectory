@@ -80,7 +80,18 @@
             </urls>
         </portal>
         <scheduler useDB="false" threadCount="3" instanceLabel="local" instanceIPMask="127.0.0.1">
-            
+            <job className="com.tremolosecurity.idp.providers.oidc.model.jobs.ClearSessions" name="clearSessions" group="admin">
+            <cronSchedule
+                seconds="0"
+                minutes="0/1"
+                hours="*"
+                dayOfMonth="*"
+                month="*"
+                dayOfWeek="?"
+                year="*"
+            />
+            <param name="idpName" value="k8sIdp" />
+            </job>
         </scheduler>
         <listeners>
           

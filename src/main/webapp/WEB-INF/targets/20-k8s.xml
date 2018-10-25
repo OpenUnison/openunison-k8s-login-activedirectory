@@ -3,7 +3,7 @@
         <param name="url" value="#[K8S_URL]"/>
         <param name="userName" value=""/>
         <param name="password" value=""/>
-        <param name="token" value="#[K8S_TOKEN]"/>
+        <param name="token" value=""/>
         <param name="useToken" value="true"/>
     </params>
 </target>

@@ -10,7 +10,7 @@
         <azSuccess>oauth2bearer</azSuccess>
       </results>
       <azRules>
-        <rule scope="filter" constraint="(groups=k8s-*)" />
+        <rule scope="dn" constraint="o=Tremolo" />
       </azRules>
     </url>
   </urls>
