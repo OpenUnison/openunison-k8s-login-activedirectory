@@ -209,7 +209,6 @@ spec:
           successThreshold: 1
           timeoutSeconds: 10
         name: openunison
-        serviceAccount: openunison
         ports:
         - containerPort: 8080
           name: http
@@ -238,6 +237,7 @@ spec:
       dnsPolicy: ClusterFirst
       restartPolicy: Always
       terminationGracePeriodSeconds: 30
+      serviceAccount: openunison
       volumes:
       - name: secret-volume
         secret:
