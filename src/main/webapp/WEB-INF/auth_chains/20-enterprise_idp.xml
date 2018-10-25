@@ -1,0 +1,26 @@
+<chain name="enterprise_idp" level="20" root="o=Data">
+  <authMech>
+    <name>loginForm</name>
+    <required>required</required>
+    <params>
+      <param name="FORMLOGIN_JSP" value="/auth/forms/defaultForm.jsp"/>
+    </params>
+ </authMech>
+  <authMech>
+    <name>jit</name>
+    <required>required</required>
+    <params>
+      <param name="nameAttr" value="uid" />
+      <param name="workflowName" value="jitdb" />
+    </params>
+  </authMech>
+  <authMech>
+    <name>genoidctoken</name>
+    <required>required</required>
+    <params>
+      <param name="idpName" value="k8sIdp" />
+      <param name="trustName" value="kubernetes" />
+
+    </params>
+  </authMech>
+</chain>

@@ -1,0 +1,379 @@
+---
+apiVersion: apiextensions.k8s.io/v1beta1
+kind: CustomResourceDefinition
+metadata:
+  name: users.openunison.tremolo.io
+spec:
+  group: openunison.tremolo.io
+  versions:
+    - name: v1
+      served: true
+      storage: true
+  version: v1
+  scope: Namespaced
+  names:
+    plural: users
+    singular: user
+    kind: User
+    shortNames:
+    - usr
+  validation:
+   # openAPIV3Schema is the schema for validating custom objects.
+    openAPIV3Schema:
+      properties:
+        spec:
+          properties:
+            sub:
+              type: string
+            groups:
+              type: array
+              items:
+                type: string
+            first_name:
+              type: string
+            last_name:
+              type: string
+            email:
+              type: string
+---
+apiVersion: apiextensions.k8s.io/v1beta1
+kind: CustomResourceDefinition
+metadata:
+  name: oidc-sessions.openunison.tremolo.io
+spec:
+  group: openunison.tremolo.io
+  versions:
+    - name: v1
+      served: true
+      storage: true
+  version: v1
+  scope: Namespaced
+  names:
+    plural: oidc-sessions
+    singular: oidc-session
+    kind: OidcSession
+    shortNames:
+    - oidc
+  validation:
+   # openAPIV3Schema is the schema for validating custom objects.
+    openAPIV3Schema:
+      properties:
+        spec:
+          properties:
+            session_id:
+              type: string
+            client_id:
+              type: string
+            encrypted_id_token:
+              type: string
+            encrypted_access_token:
+              type: string
+            expires:
+              type: string
+            user_dn:
+              type: string
+            refresh_token:
+              type: string
+---
+kind: Role
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  namespace: openunison
+  name: oidc-user-sessions
+rules:
+- apiGroups: ["openunison.tremolo.io"]
+  resources: ["oidc-sessions","users"]
+  verbs: ["*"]
+---
+kind: RoleBinding
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: oidc-user-sessions
+  namespace: openunison
+subjects:
+- kind: ServiceAccount
+  name: openunison
+  namespace: openunison
+roleRef:
+  kind: Role
+  name: oidc-user-sessions
+  apiGroup: rbac.authorization.k8s.io
+---
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+  annotations:
+    kubernetes.io/ingress.class: nginx
+    nginx.ingress.kubernetes.io/backend-protocol: https
+    nginx.ingress.kubernetes.io/secure-backends: "true"
+    nginx.org/ssl-services: openunison
+    nginx.ingress.kubernetes.io/affinity: cookie
+    nginx.ingress.kubernetes.io/session-cookie-name: INGRESSCOOKIE
+    nginx.ingress.kubernetes.io/session-cookie-hash: sha1
+  name: openunison-ingress
+  namespace: openunison
+spec:
+  rules:
+  - host: #[OU_HOST]
+    http:
+      paths:
+      - backend:
+          serviceName: openunison
+          servicePort: 443
+        path: /
+  - host: #[K8S_DASHBOARD_HOST]
+    http:
+      paths:
+      - backend:
+          serviceName: openunison
+          servicePort: 443
+        path: /
+  tls:
+  - hosts:
+    - #[OU_HOST]
+    - #[K8S_DASHBOARD_HOST]
+    secretName: ou-tls-certificate
+status:
+  loadBalancer: {}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: openunison
+  name: openunison
+  namespace: openunison
+spec:
+  ports:
+  - name: openunison-secure
+    port: 443
+    protocol: TCP
+    targetPort: 8443
+  - name: openunison-insecure
+    port: 80
+    protocol: TCP
+    targetPort: 8080
+  selector:
+    app: openunison
+  sessionAffinity: ClientIP
+  sessionAffinityConfig:
+    clientIP:
+      timeoutSeconds: 10800
+  type: ClusterIP
+status:
+  loadBalancer: {}
+---
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  labels:
+    app: openunison
+  name: openunison
+  namespace: openunison
+spec:
+  progressDeadlineSeconds: 600
+  replicas: 1
+  revisionHistoryLimit: 10
+  selector:
+    matchLabels:
+      app: openunison
+  strategy:
+    rollingUpdate:
+      maxSurge: 25%
+      maxUnavailable: 25%
+    type: RollingUpdate
+  template:
+    metadata:
+      creationTimestamp: null
+      labels:
+        app: openunison
+    spec:
+      containers:
+      - env:
+        - name: JAVA_OPTS
+          value: -Djava.awt.headless=true -Djava.security.egd=file:/dev/./urandom
+            -DunisonEnvironmentFile=/etc/openunison/ou.env
+        - name: fortriggerupdates
+          value: changeme
+        - name: OPENUNISON_WAR_URL
+          value:  https://www.tremolosecurity.com/nexus/content/repositories/betas/io/openunison/openunison-k8s-login-activedirectory/1.0.16/openunison-k8s-login-activedirectory-1.0.16.war
+        image: docker.io/tremolosecurity/openunison-docker-ubuntu
+        imagePullPolicy: Always
+        livenessProbe:
+          exec:
+            command:
+            - /usr/local/openunison/bin/check_alive.py
+          failureThreshold: 10
+          initialDelaySeconds: 120
+          periodSeconds: 10
+          successThreshold: 1
+          timeoutSeconds: 10
+        name: openunison
+        ports:
+        - containerPort: 8080
+          name: http
+          protocol: TCP
+        - containerPort: 8443
+          name: https
+          protocol: TCP
+        readinessProbe:
+          exec:
+            command:
+            - /usr/local/openunison/bin/check_alive.py
+            - https://127.0.0.1:8443/auth/idp/k8sIdp/.well-known/openid-configuration
+            - issuer
+          failureThreshold: 3
+          initialDelaySeconds: 30
+          periodSeconds: 10
+          successThreshold: 1
+          timeoutSeconds: 10
+        resources: {}
+        terminationMessagePath: /dev/termination-log
+        terminationMessagePolicy: File
+        volumeMounts:
+        - mountPath: /etc/openunison
+          name: secret-volume
+          readOnly: true
+      dnsPolicy: ClusterFirst
+      restartPolicy: Always
+      terminationGracePeriodSeconds: 30
+      volumes:
+      - name: secret-volume
+        secret:
+          defaultMode: 420
+          secretName: openunison-secrets
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  labels:
+    k8s-app: kubernetes-dashboard
+  name: kubernetes-dashboard
+  namespace: kube-system
+
+---
+# ------------------- Dashboard Role & Role Binding ------------------- #
+
+kind: Role
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: kubernetes-dashboard-minimal
+  namespace: kube-system
+rules:
+  # Allow Dashboard to create 'kubernetes-dashboard-key-holder' secret.
+- apiGroups: [""]
+  resources: ["secrets"]
+  verbs: ["create"]
+  # Allow Dashboard to create 'kubernetes-dashboard-settings' config map.
+- apiGroups: [""]
+  resources: ["configmaps"]
+  verbs: ["create"]
+  # Allow Dashboard to get, update and delete Dashboard exclusive secrets.
+- apiGroups: [""]
+  resources: ["secrets"]
+  resourceNames: ["kubernetes-dashboard-key-holder", "kubernetes-dashboard-certs"]
+  verbs: ["get", "update", "delete"]
+  # Allow Dashboard to get and update 'kubernetes-dashboard-settings' config map.
+- apiGroups: [""]
+  resources: ["configmaps"]
+  resourceNames: ["kubernetes-dashboard-settings"]
+  verbs: ["get", "update"]
+  # Allow Dashboard to get metrics from heapster.
+- apiGroups: [""]
+  resources: ["services"]
+  resourceNames: ["heapster"]
+  verbs: ["proxy"]
+- apiGroups: [""]
+  resources: ["services/proxy"]
+  resourceNames: ["heapster", "http:heapster:", "https:heapster:"]
+  verbs: ["get"]
+
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: kubernetes-dashboard-minimal
+  namespace: kube-system
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: kubernetes-dashboard-minimal
+subjects:
+- kind: ServiceAccount
+  name: kubernetes-dashboard
+  namespace: kube-system
+
+---
+# ------------------- Dashboard Deployment ------------------- #
+
+kind: Deployment
+apiVersion: apps/v1beta2
+metadata:
+  labels:
+    k8s-app: kubernetes-dashboard
+  name: kubernetes-dashboard
+  namespace: kube-system
+spec:
+  replicas: 1
+  revisionHistoryLimit: 10
+  selector:
+    matchLabels:
+      k8s-app: kubernetes-dashboard
+  template:
+    metadata:
+      labels:
+        k8s-app: kubernetes-dashboard
+    spec:
+      containers:
+      - name: kubernetes-dashboard
+        image: k8s.gcr.io/kubernetes-dashboard-amd64:v1.10.0
+        ports:
+        - containerPort: 8443
+          protocol: TCP
+        args:
+          - --auto-generate-certificates
+          # Uncomment the following line to manually specify Kubernetes API server Host
+          # If not specified, Dashboard will attempt to auto discover the API server and connect
+          # to it. Uncomment only if the default does not work.
+          # - --apiserver-host=http://my-address:port
+        volumeMounts:
+        - name: kubernetes-dashboard-certs
+          mountPath: /certs
+          # Create on-disk volume to store exec logs
+        - mountPath: /tmp
+          name: tmp-volume
+        livenessProbe:
+          httpGet:
+            scheme: HTTPS
+            path: /
+            port: 8443
+          initialDelaySeconds: 30
+          timeoutSeconds: 30
+      volumes:
+      - name: kubernetes-dashboard-certs
+        secret:
+          secretName: kubernetes-dashboard-certs
+      - name: tmp-volume
+        emptyDir: {}
+      serviceAccountName: kubernetes-dashboard
+      # Comment the following tolerations if Dashboard must not be deployed on master
+      tolerations:
+      - key: node-role.kubernetes.io/master
+        effect: NoSchedule
+
+---
+# ------------------- Dashboard Service ------------------- #
+
+kind: Service
+apiVersion: v1
+metadata:
+  labels:
+    k8s-app: kubernetes-dashboard
+  name: kubernetes-dashboard
+  namespace: kube-system
+spec:
+  ports:
+    - port: 443
+      targetPort: 8443
+  selector:
+    k8s-app: kubernetes-dashboard
