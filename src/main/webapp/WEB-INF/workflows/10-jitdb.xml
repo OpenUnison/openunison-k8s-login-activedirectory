@@ -14,7 +14,7 @@
       </map>
       <onSuccess>
 
-        <addGroup name="users" />
+        
         <provision sync="true" target="jitdb" setPassword="false" onlyPassedInAttributes="false" >
           <attributes>
             <value>sub</value>
