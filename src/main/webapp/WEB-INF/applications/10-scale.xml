@@ -96,18 +96,18 @@
       <host>#[OU_HOST]</host>
       <filterChain>
         <filter class="com.tremolosecurity.scalejs.ws.ScaleMain">
-          <param name="displayNameAttribute" value="mail"/>
+          <param name="displayNameAttribute" value="sub"/>
           <param name="frontPage.title" value="Kubernetes Access Portal"/>
           <param name="frontPage.text" value="Use this portal to create and access namespaces in Kubernetes"/>
           <param name="canEditUser" value="false"/>
           <param name="workflowName" value=""/>
           <param name="warnMinutesLeft" value="5" />
-          <param name="attributeNames" value="uid"/>
-          <param name="uid.displayName" value="Login ID"/>
-          <param name="uid.readOnly" value="true"/>
-          <param name="attributeNames" value="givenname"/>
-          <param name="givenname.displayName" value="First Name"/>
-          <param name="givenname.readOnly" value="true"/>
+          <param name="attributeNames" value="sub"/>
+          <param name="sub.displayName" value="Login ID"/>
+          <param name="sub.readOnly" value="true"/>
+          <param name="attributeNames" value="givenName"/>
+          <param name="givenName.displayName" value="First Name"/>
+          <param name="givenName.readOnly" value="true"/>
           <param name="attributeNames" value="sn"/>
           <param name="sn.displayName" value="Last Name"/>
           <param name="sn.readOnly" value="true"/>

@@ -82,7 +82,7 @@ Perform these steps from a location with a working `kubectl` configuration:
 Based on where you put the files from `Prepare Deployment`, run the following:
 
 ```
-curl https://raw.githubusercontent.com/TremoloSecurity/kubernetes-artifact-deployment/master/src/main/bash/deploy_openunison.sh | bash -s /path/to/certs /path/to/props https://raw.githubusercontent.com/TremoloSecurity/openunison-qs-kubernetes/activedirectory/src/main/yaml/artifact-deployment.yaml
+curl https://raw.githubusercontent.com/TremoloSecurity/kubernetes-artifact-deployment/master/src/main/bash/deploy_openunison.sh | bash -s /path/to/certs /path/to/props https://raw.githubusercontent.com/OpenUnison/openunison-k8s-login-activedirectory/master/src/main/yaml/artifact-deployment.yaml
 ```
 
 The output will look like:
@@ -107,38 +107,57 @@ Once you see `Completed`, you can exit the script (`Ctl+C`).  This script create
 
 Run `kubectl describe configmap api-server-config -n openunison` to get the SSO integration artifacts.  The output will give you both the certificate that needs to be trusted and the API server flags that need to be configured on your API servers.
 
-## First Login to the Kubernetes Identity Manager
+## First Login
 
-At this point you should be able to login to OpenUnison using the host specified in  the `OU_HOST` of your properties.  Once you are logged in, logout.  Users are created in the database "just-in-time", meaning that once you login the data representing your user is created inside of the database deployed for OpenUnison.
+To login, open your browser and go to the host you specified for `OU_HOST` in your `input.props`.  For instance if `OU_HOST` is `k8sou.tremolo.lan` then navigate to https://k8sou.tremolo.lan.  You'll be prompted for your Active Directory username and password.  Once authenticated you'll be able login to the portal and generate your `.kube/config` from the Tokens screen.
 
-## Create First Administrator
+## Authorizing Access via RBAC
 
-The user you logged in as is currently unprivileged.  In order for other users to login and begin requesting access to projects this first user must be enabled as an approver.  Login to the MySQL database deployed for OpenUnison and execute the following SQL:
+On first login, if you haven't authorized access to any Kubernetes roles you won't be able to do anything.  There are two approaches you can take:
 
-```sql
-insert into userGroups (userId,groupId) values (2,1);
+### Group Driven Membership
+
+If you can populate groups in Active Directory for Kubernetes, you can use those groups for authorization via OpenUnison.  OpenUnison will provide all of a user's groups via the `id_token` supplied to Kubernetes.  The `groups` claim is a list of values, in this case the Distinguished Names of the user's groups.  As an example, I created a group in AD called `k8s_login_ckuster_admins` in the `Users` container of my `ent2k12.domain.com` domain.  This means the group will be `CN=k8s_login_ckuster_admins,CN=Users,DC=ent2k12,DC=domain,DC=com` (you can get the exact name of the group from the `distinguishedName` attribute of the group in Active Directory).  To authorize members of this group to be cluster administrators, we create a `ClusterRoleBinding`:
+
+```
+kind: ClusterRoleBinding
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: activedirectory-cluster-admins
+subjects:
+- kind: Group
+  name: CN=k8s_login_ckuster_admins,CN=Users,DC=ent2k12,DC=domain,DC=com
+roleRef:
+  kind: ClusterRole
+  name: cluster-admin
+  apiGroup: rbac.authorization.k8s.io
 ```
 
-This will add the administrator group to your user.  Logout of OpenUnison and log back in.
+### User Driven Membership
 
-## Self Request & Approve Cluster Administrator
+If you are not able to create groups in Active Directory, you can directly add users to role bindings.  Kubernetes requires that you identify openid connect users with the prefix of the url of the identity provider.  So if your `OU_HOST` is `k8sou.tremolo.lan` and your user's login is `mmosley` your username to Kubernetes would be `https://k8sou.tremolo.lan/auth/idp/k8sIdp#mmosley`.  To create a cluster role binding to give cluster-admin access to a specific user:
 
-Once SSO is enabled in the next step, you'll need a cluster administrator to be able to perform cluster level operations:
+```
+kind: ClusterRoleBinding
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: activedirectory-cluster-admins
+subjects:
+- kind: User
+  name: https://k8sou.tremolo.lan/auth/idp/k8sIdp#mmosley
+roleRef:
+  kind: ClusterRole
+  name: cluster-admin
+  apiGroup: rbac.authorization.k8s.io
+```
 
-1.  Login to OpenUnison
-2.  Click on "Request Access" in the title bar
-3.  Click on "Kubernetes Administration"
-4.  Click "Add To Cart" next to "Cluster Administrator"
-5.  Next to "Check Out" in the title bar you'll see a red `1`, click on "Check Out"
-6.  For "Supply Reason", give a reason like "Initial user" and click "Submit Request"
-7.  Since you are the only approver refresh OpenUnison, you will see a red `1` next to "Open Approvals".  Click on "Open Approvals"
-8. Click "Review" next to your email address
-9. Specify "Initial user" for the "Justification" and click "Approve"
-10. Click on "Confirm Approval"
+*NOTE*: There are multiple reasons this is a bad idea:
+1.  Hard to audit - There is no easy way to say "what role bindings is `mmosley` a member of?
+2.  Difficult to remove access - Same reason as #1, you need to figure out every role binding a user is a member of to remove
+3.  Easy to get wrong - If you mistype a user's login id Kubernetes won't tell you
 
-At this point you will be provisioned to the `k8s-cluster-administrators` group in the database that has a RoleBinding to the `cluster-admin` Role.  Logout of OpenUnison and log back in.  If you click on your email address in the upper left, you'll see that you have the Role `k8s-cluster-administrators`.  
+If you can't use Active Directory groups, take a look at the OpenUnison Identity Manager for Kubernetes - https://github.com/TremoloSecurity/openunison-qs-kubernetes/tree/activedirectory.  This tool adds on to the login capabilities with the ability to manage access to the cluster and namespaces, along with providing a self service way for users to request new namespaces and manage access.
 
 # Whats next?
-Users can now login to create namespaces, request access to cluster admin or request access to other clusters.
 
 Now you can begin mapping OpenUnison's capabilities to your business and compliance needs.  For instance you can add multi-factor authentication with TOTP or U2F, Create privileged workflows for onboarding, scheduled workflows that will deprovision users, etc.

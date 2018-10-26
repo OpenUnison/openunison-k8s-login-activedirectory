@@ -17,15 +17,6 @@
                 </azRules>
                 <idp className="com.tremolosecurity.idp.providers.OpenIDConnectIdP">
                     <params name="jwtSigningKey" value="unison-saml2-rp-sig"/>
-                    <!-- <params name="driver" value="#[OU_JDBC_DRIVER]"/>
-                    <params name="url" value="#[OU_JDBC_URL]"/>
-                    <params name="user" value="#[OU_JDBC_USER]"/>
-                    <params name="password" value="#[OU_JDBC_PASSWORD]"/>
-                    <params name="maxCons" value="10"/>
-                    <params name="maxIdleCons" value="10"/>
-                    <params name="dialect" value="#[OU_HIBERNATE_DIALECT]"/>
-                    <params name="validationQuery" value="#[OU_JDBC_VALIDATION]"/> -->
-
                     <params name="sessionStoreClassName" value="com.tremolosecurity.oidc.k8s.K8sSessionStore"/>
                     <params name="k8sTarget" value="k8s" />
                     <params name="k8sNameSpace" value="openunison" />
