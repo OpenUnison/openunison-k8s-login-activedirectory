@@ -195,9 +195,7 @@ spec:
             -DunisonEnvironmentFile=/etc/openunison/ou.env
         - name: fortriggerupdates
           value: changeme
-        - name: OPENUNISON_WAR_URL
-          value:  https://www.tremolosecurity.com/nexus/content/repositories/betas/io/openunison/openunison-k8s-login-activedirectory/1.0.16/openunison-k8s-login-activedirectory-1.0.16.war
-        image: docker.io/tremolosecurity/openunison-docker-ubuntu
+        image: docker.io/tremolosecurity/openunison-k8s-login-activedirectory
         imagePullPolicy: Always
         livenessProbe:
           exec:
