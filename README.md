@@ -1,8 +1,8 @@
 # Kubernetes Login Portal for ActiveDirectory
 
-[![Alt text](http://i.vimeocdn.com/video/671443572_640.jpg)](https://vimeo.com/246464075)
+[![Alt text](https://i.vimeocdn.com/video/735154945_640.webp)](https://vimeo.com/297400302)
 
-*Short video of logging into Kubernetes and using kubectl using ADFS*
+*Short video of logging into Kubernetes and using kubectl using Active Directory*
 
 This application provides a login portal for Kubernetes that allows you to authenticate with your Active Directory credentials, use Active Directory groups for RBAC authorizations and provides integration for both `kubectl` and the Kubernetes Dashboard (https://github.com/kubernetes/dashboard).  The portal runs inside of Kubernetes, leveraging Kubernetes for scalability, secret management and deployment. 
 
@@ -11,6 +11,12 @@ This application provides a login portal for Kubernetes that allows you to authe
 When a user accesses Kubernetes using OpenUnison, they'll access both the login portal and the dashboard through OpenUnison (instead of directly via an ingress).  OpenUnison will inject the user's identity into each request, allowing the dashboard to act on their behalf.  The login portal has no external dependencies outside of Active Directory and Kubernetes.  All objects for session state are stored as CRDs.
 
 # Deployment
+
+## Watch a Video
+
+This 11 minute video shows the entire deployment and user onboarding process
+
+[![Alt text](https://i.vimeocdn.com/video/735306153_640.webp)](https://vimeo.com/297399119)
 
 ## What You Need To Start
 
