@@ -201,7 +201,15 @@ dbsecret = {
     }
 };
 
-k8s.postWS('/api/v1/namespaces/kube-system/secrets',JSON.stringify(dbsecret));
+res = k8s.postWS('/api/v1/namespaces/kube-system/secrets',JSON.stringify(dbsecret));
+
+if (res["code"] == 409) {
+    print("Secret alread exists, lets delete then recreate");
+    k8s.deleteWS('/api/v1/namespaces/kube-system/secrets/kubernetes-dashboard-certs');
+
+    print("re-creating");
+    k8s.postWS('/api/v1/namespaces/kube-system/secrets',JSON.stringify(dbsecret));
+}
 
 print("Create the openunison namespace");
 
