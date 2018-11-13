@@ -167,3 +167,89 @@ If you can't use Active Directory groups, take a look at the OpenUnison Identity
 # Whats next?
 
 Now you can begin mapping OpenUnison's capabilities to your business and compliance needs.  For instance you can add multi-factor authentication with TOTP or U2F, Create privileged workflows for onboarding, scheduled workflows that will deprovision users, etc.
+
+# Customizing Directory Connections
+
+If you're running multiple directories, or need to connect to a generic LDAP directory isntead of Active Directory you can provide a custom MyVirtualDirectory configuration file without a re-build of your containers.  Start with the myvd.conf file at https://github.com/OpenUnison/openunison-k8s-login-activedirectory/blob/master/src/main/webapp/WEB-INF/myvd.conf.  ONLY edit the section that begins with `server.activedirectory`.  As an example, the below configuration works against a generic LDAPv3 directory with the `VirtualMemberOf` insert configured to create a `memeberOf` attribute on users so we can supply groups to Kubernetes:
+
+```
+#Global AuthMechConfig
+server.globalChain=accesslog
+
+server.globalChain.accesslog.className=com.tremolosecurity.proxy.myvd.log.AccessLog
+
+server.nameSpaces=rootdse,myvdroot,shadowUsers,activedirectory
+server.rootdse.chain=dse
+server.rootdse.nameSpace=
+server.rootdse.weight=0
+server.rootdse.dse.className=net.sourceforge.myvd.inserts.RootDSE
+server.rootdse.dse.config.namingContexts=o=Tremolo
+server.myvdroot.chain=root
+server.myvdroot.nameSpace=o=Tremolo
+server.myvdroot.weight=0
+server.myvdroot.root.className=net.sourceforge.myvd.inserts.RootObject
+
+server.shadowUsers.chain=debug,mapping,api
+server.shadowUsers.nameSpace=ou=shadow,o=Tremolo
+server.shadowUsers.weight=0
+server.shadowUsers.enabled=true
+server.shadowUsers.debug.className=net.sourceforge.myvd.inserts.DumpTransaction
+server.shadowUsers.debug.config.logLevel=info
+server.shadowUsers.debug.config.label=k8s
+server.shadowUsers.mapping.className=net.sourceforge.myvd.inserts.mapping.AttributeMapper
+server.shadowUsers.mapping.config.mapping=mail=email,givenName=first_name,sn=last_name
+server.shadowUsers.api.className=com.tremolosecurity.myvd.K8sCrdInsert
+server.shadowUsers.api.config.nameSpace=openunison
+server.shadowUsers.api.config.k8sTargetName=k8s
+
+server.activedirectory.chain=objectguid2text,dnmapper,memberof,objmap,membertrans,ldap
+server.activedirectory.nameSpace=ou=activedirectory,o=Data
+server.activedirectory.weight=0
+server.activedirectory.enabled=true
+server.activedirectory.objectguid2text.className=com.tremolosecurity.proxy.myvd.inserts.util.UUIDtoText
+server.activedirectory.objectguid2text.config.attributeName=objectGUID
+server.activedirectory.dnmapper.className=net.sourceforge.myvd.inserts.mapping.DNAttributeMapper
+server.activedirectory.dnmapper.config.dnAttribs=member,owner,member,distinguishedName,manager
+server.activedirectory.dnmapper.config.localBase=ou=activedirectory,o=Data
+server.activedirectory.dnmapper.config.urlAttribs=
+server.activedirectory.dnmapper.config.remoteBase=#[AD_BASE_DN]
+server.activedirectory.memberof.className=net.sourceforge.myvd.inserts.mapping.VirtualMemberOf
+server.activedirectory.memberof.config.searchBase=ou=activedirectory,o=Data
+server.activedirectory.memberof.config.applyToObjectClass=inetOrgPerson
+server.activedirectory.memberof.config.attributeName=memberOf
+server.activedirectory.memberof.config.searchObjectClass=groupOfNames
+server.activedirectory.memberof.config.searchAttribute=member
+server.activedirectory.memberof.config.replace=false
+server.activedirectory.objmap.className=net.sourceforge.myvd.inserts.mapping.AttributeValueMapper
+server.activedirectory.objmap.config.mapping=objectClass.inetOrgPerson=inetOrgPerson,objectClass.groupofnames=groupOfNames
+server.activedirectory.membertrans.className=net.sourceforge.myvd.inserts.mapping.AttributeMapper
+server.activedirectory.membertrans.config.mapping=member=member,uid=uid
+server.activedirectory.ldap.className=com.tremolosecurity.proxy.myvd.inserts.ad.ADLdapInsert
+server.activedirectory.ldap.config.host=#[AD_HOST]
+server.activedirectory.ldap.config.port=#[AD_PORT]
+server.activedirectory.ldap.config.remoteBase=#[AD_BASE_DN]
+server.activedirectory.ldap.config.proxyDN=#[AD_BIND_DN]
+server.activedirectory.ldap.config.proxyPass=#[AD_BIND_PASSWORD]
+server.activedirectory.ldap.config.useSrvDNS=#[SRV_DNS]
+server.activedirectory.ldap.config.ignoreRefs=true
+server.activedirectory.ldap.config.passBindOnly=true
+server.activedirectory.ldap.config.maxIdle=90000
+server.activedirectory.ldap.config.maxMillis=90000
+server.activedirectory.ldap.config.maxStaleTimeMillis=90000
+server.activedirectory.ldap.config.minimumConnections=10
+server.activedirectory.ldap.config.maximumConnections=10
+server.activedirectory.ldap.config.usePaging=false
+server.activedirectory.ldap.config.pageSize=0
+server.activedirectory.ldap.config.heartbeatIntervalMillis=60000
+server.activedirectory.ldap.config.type=#[AD_CON_TYPE]
+server.activedirectory.ldap.config.sslSocketFactory=com.tremolosecurity.proxy.ssl.TremoloSSLSocketFactory
+```
+
+Once OpenUnison is deployed, create a directory with your `myvd.conf` file in it and deploy it as a `ConfigMap`:
+
+```
+kubectl create configmap myvd --from-file . -n openunison
+```
+
+Next edit the `openunison` deployment to mount the `ConfigMap` to `/etc/myvd` and change the environment variable `MYVD_CONFIG_PATH` to `/etc/myvd/myvd.conf`.  Once the OpenUnison pods have been recreated, you can login with your LDAP uid (as opposed to an Active Directory samAccountName).
+
