@@ -195,6 +195,8 @@ spec:
             -DunisonEnvironmentFile=/etc/openunison/ou.env
         - name: fortriggerupdates
           value: changeme
+        - name: MYVD_CONFIG_PATH
+          value: WEB-INF/myvd.conf
         image: docker.io/tremolosecurity/openunison-k8s-login-activedirectory
         imagePullPolicy: Always
         livenessProbe:
