@@ -10,18 +10,18 @@
   <repositories>
     <repository>
       <id>Tremolo Security Betas</id>
-      <url>https://www.tremolosecurity.com/nexus/content/repositories/betas/</url>
+      <url>https://nexus.tremolo.io/repository/betas/</url>
     </repository>
     <repository>
       <id>Tremolo Security Releases</id>
-      <url>https://www.tremolosecurity.com/nexus/content/repositories/releases/</url>
+      <url>https://nexus.tremolo.io/repository/releases/</url>
     </repository>
   </repositories>
   <distributionManagement>
 		<repository>
 			<id>deployment</id>
 			<name>Tremolo Security Releases</name>
-			<url>https://www.tremolosecurity.com/nexus/content/repositories/betas</url>
+			<url>https://nexus.tremolo.io/repository/betas/</url>
 		</repository>
 
 	</distributionManagement>
