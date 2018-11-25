@@ -78,6 +78,28 @@
           </overlays>
         </configuration>
       </plugin>
+      <plugin>
+        <groupId>com.google.cloud.tools</groupId>
+        <artifactId>jib-maven-plugin</artifactId>
+        <version>0.10.0</version>
+        <configuration>
+          <from>
+            <image>tremolosecurity/openunison-jib-builder:latest</image>
+          </from>
+          <container>
+            <user>431</user>
+            <appRoot>/usr/local/openunison/work/webapp</appRoot>
+            <entrypoint>/usr/local/openunison/bin/run_openunison.sh</entrypoint>
+          </container>
+          <to>
+            <image>${env.OU_CONTAINER_DEST}</image>
+            <auth>
+              <username>${env.OU_REG_USER}</username>
+              <password>${env.OU_REG_PASSWORD}</password>
+            </auth>
+          </to>
+        </configuration>
+      </plugin>
     </plugins>
   </build>
   </project>
