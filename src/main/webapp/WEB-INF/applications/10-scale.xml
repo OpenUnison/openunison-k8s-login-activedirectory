@@ -125,8 +125,8 @@
           <param name="approvals.mail" value="Email Address"/>
           <param name="showPortalOrgs" value="false"/>
           <param name="logoutURL" value="/logout"/>
-          <param name="canDelegate" value="no" />
-          <param name="canPreApprove" value="no" />
+          <param name="canDelegate" value="NO" />
+          <param name="canPreApprove" value="NO" />
 
         </filter>
       </filterChain>
@@ -205,9 +205,10 @@
     <!-- The name of the AES-256 key in the keystore to use to encrypt this session -->
     <keyAlias>session-unison</keyAlias>
     <!-- If set to true, the cookie's secure flag is set to true and the browser will only send this cookie over https connections -->
-    <secure>false</secure>
+    <secure>true</secure>
+    <httpOnly>true</httpOnly>
     <!-- The number of secconds that the session should be allowed to be idle before no longer being valid -->
-    <timeout>900</timeout>
+    <timeout>#[SESSION_INACTIVITY_TIMEOUT_SECONDS]</timeout>
     <!-- required but ignored -->
     <scope>-1</scope>
   </cookieConfig>

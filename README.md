@@ -1,14 +1,14 @@
-# Kubernetes Login Portal for ActiveDirectory
+# Orchestra Login Portal for ActiveDirectory
 
 [![Alt text](https://i.vimeocdn.com/video/735154945_640.webp)](https://vimeo.com/297400302)
 
 *Short video of logging into Kubernetes and using kubectl using Active Directory*
 
-This application provides a login portal for Kubernetes that allows you to authenticate with your Active Directory credentials, use Active Directory groups for RBAC authorizations and provides integration for both `kubectl` and the Kubernetes Dashboard (https://github.com/kubernetes/dashboard).  The portal runs inside of Kubernetes, leveraging Kubernetes for scalability, secret management and deployment. 
+Orchestra Login Portal provides a login portal for Kubernetes that allows you to authenticate with your Active Directory credentials, use Active Directory groups for RBAC authorizations and provides integration for both `kubectl` and the Kubernetes Dashboard (https://github.com/kubernetes/dashboard).  The portal runs inside of Kubernetes, leveraging Kubernetes for scalability, secret management and deployment. 
 
-![Kubernetes Identity Manager Architecture](imgs/openunison_qs_kubernetes.png)
+![Orchestra Login Portal Architecture](imgs/openunison_qs_kubernetes.png)
 
-When a user accesses Kubernetes using OpenUnison, they'll access both the login portal and the dashboard through OpenUnison (instead of directly via an ingress).  OpenUnison will inject the user's identity into each request, allowing the dashboard to act on their behalf.  The login portal has no external dependencies outside of Active Directory and Kubernetes.  All objects for session state are stored as CRDs.
+When a user accesses Kubernetes using Orchestra, they'll access both the login portal and the dashboard through OpenUnison (instead of directly via an ingress).  OpenUnison will inject the user's identity into each request, allowing the dashboard to act on their behalf.  The login portal has no external dependencies outside of Active Directory and Kubernetes.  All objects for session state are stored as CRDs.
 
 # Deployment
 
@@ -20,16 +20,16 @@ This 11 minute video shows the entire deployment and user onboarding process
 
 ## What You Need To Start
 
-Prior to deploying OpenUnison you will need:
+Prior to deploying Orchestra you will need:
 
 1. Kubernetes 1.10 or higher
-2. The Nginx Ingress Controler deployed (https://kubernetes.github.io/ingress-nginx/deploy/)
+2. The Nginx Ingress Controller deployed (https://kubernetes.github.io/ingress-nginx/deploy/)
 3. The certificate authority certificate for your Active Directory forest
 
 
 ## Create Environments File
 
-OpenUnison stores environment specific information, such as host names, passwords, etc, in a properties file that will then be loaded by OpenUnison and merged with its configruation.  This file will be stored in Kubernetes as a secret then accessed by OpenUnison on startup to fill in the `#[]` parameters in `unison.xml` and `myvd.conf`.  For instance the parameter `#[OU_HOST]` in `unison.xml` would have an entry in this file.  Below is an example file:
+Orchestra stores environment specific information, such as host names, passwords, etc, in a properties file that will then be loaded by OpenUnison and merged with its configuration.  This file will be stored in Kubernetes as a secret then accessed by OpenUnison on startup to fill in the `#[]` parameters in `unison.xml` and `myvd.conf`.  For instance the parameter `#[OU_HOST]` in `unison.xml` would have an entry in this file.  Below is an example `input.props` file:
 
 ```properties
 OU_HOST=k8sou.tremolo.lan
@@ -50,6 +50,8 @@ OU_CERT_ST=Virginia
 OU_CERT_C=US
 unisonKeystorePassword=start123
 USE_K8S_CM=true
+SESSION_INACTIVITY_TIMEOUT_SECONDS=900
+MYVD_CONFIG_PATH=WEB-INF/myvd.conf
 ```
 
 *Detailed Description or Properties*
@@ -73,22 +75,24 @@ USE_K8S_CM=true
 | OU_CERT_ST | The `ST` attribute for the forward facing certificate |
 | OU_CERT_C | The `C` attribute for the forward facing certificate |
 | unisonKeystorePassword | The password for OpenUnison's keystore |
-| USE_K8S_CM | Tells the deployment system if you should use k8s' built in certificate manager.  If your distrobution doesn't support this (such as Canonical and Rancher), set this to false |
+| USE_K8S_CM | Tells the deployment system if you should use k8s' built in certificate manager.  If your distribution doesn't support this (such as Canonical and Rancher), set this to false |
+| SESSION_INACTIVITY_TIMEOUT_SECONDS | The number of seconds of inactivity before the session is terminated, also the length of the refresh token's session |
+| MYVD_CONFIG_PATH | The path to the MyVD configuration file, unless being customized, use `WEB-INF/myvd.conf` |
 
 
 ## Prepare Deployment
 
 Perform these steps from a location with a working `kubectl` configuration:
 
-1. Create a directory to store `input.props`, ie `/path/to/props` and put `input.props` in that directory
-2. Create a directory for the Active Directory root certificate and store it there with the name `trusted-adldaps.pem`, ie `/path/to/certs`
+1. Create a directory to store secrets, ie `/path/to/secrets`, and put `input.props` (the properties file defined above) in that directory
+2. Create a directory for config maps, ie `/apth/to/configmaps` for the Active Directory root certificate and store it there with the name `trusted-adldaps.pem`
 
 ## Deployment
 
 Based on where you put the files from `Prepare Deployment`, run the following:
 
 ```
-curl https://raw.githubusercontent.com/TremoloSecurity/kubernetes-artifact-deployment/master/src/main/bash/deploy_openunison.sh | bash -s /path/to/certs /path/to/props https://raw.githubusercontent.com/OpenUnison/openunison-k8s-login-activedirectory/master/src/main/yaml/artifact-deployment.yaml
+curl https://raw.githubusercontent.com/TremoloSecurity/kubernetes-artifact-deployment/master/src/main/bash/deploy_openunison.sh | bash -s /path/to/configmaps /path/to/secrets https://raw.githubusercontent.com/OpenUnison/openunison-k8s-login-activedirectory/master/src/main/yaml/artifact-deployment.yaml
 ```
 
 The output will look like:
@@ -253,3 +257,26 @@ kubectl create configmap myvd --from-file . -n openunison
 
 Next edit the `openunison` deployment to mount the `ConfigMap` to `/etc/myvd` and change the environment variable `MYVD_CONFIG_PATH` to `/etc/myvd/myvd.conf`.  Once the OpenUnison pods have been recreated, you can login with your LDAP uid (as opposed to an Active Directory samAccountName).
 
+# Updating Secrets and Certificates
+
+In order to change the secrets or update certificate store:
+
+Download the contents of `openunison-secrets` in the `openunison` namespace into an empty directory
+
+```
+kubectl get  secret openunison-secrets -o json  -n openunison | python /path/to/openunison-k8s-idm-oidc/src/main/python/download_secrets.py
+```
+
+`download_secrets.py` is a utility script for pulling the files out of secrets and config maps.  Next, make your changes.  You can't apply over an existing secret, so next delete the current secret:
+
+```
+kubectl delete secret openunison-secrets -n openunison
+```
+
+Finally, create the secret from the directory where you downloaded the secrets:
+
+```
+kubectl create secret generic openunison-secrets --from-file=. -n openunison
+```
+
+Redeploy Orchestra to pick up the changes.  The easiest way is to update an environment variable in the `openunison` deployment
