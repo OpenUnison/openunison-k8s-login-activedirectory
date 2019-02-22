@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <tremoloConfig xmlns="http://www.tremolosecurity.com/tremoloConfig" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.tremolosecurity.com/tremoloConfig tremoloConfig.xsd">
-  <applications openSessionCookieName="openSession" openSessionTimeout="9000">
+  <applications openSessionCookieName="openSession" openSessionTimeout="#[SESSION_INACTIVITY_TIMEOUT_SECONDS]" openSessionSecure="true" openSessionHttpOnly="true">
     @[dir:applications]
   </applications>
   <myvdConfig>#[MYVD_CONFIG_PATH]</myvdConfig>

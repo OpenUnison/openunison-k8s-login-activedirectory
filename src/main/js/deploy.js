@@ -64,6 +64,11 @@ if (use_k8s_cm) {
   print("Requesting certificate");
   apiResp = k8s.postWS('/apis/certificates.k8s.io/v1beta1/certificatesigningrequests',JSON.stringify(csrReq));
 
+  if (apiResp.code == 409) {
+    print("CertManager is not enabled on this cluster.  Change USE_K8S_CM=false in your input.props");
+    exit(1);
+  }
+
   print("Approving certificate");
   approveReq = JSON.parse(apiResp.data);
   approveReq.status.conditions = [
@@ -76,10 +81,16 @@ if (use_k8s_cm) {
 
   apiResp = k8s.putWS('/apis/certificates.k8s.io/v1beta1/certificatesigningrequests/openunison.openunison.svc.cluster.local/approval',JSON.stringify(approveReq));
   print("Retrieving certificate from API server");
-  apiResp = k8s.callWS('/apis/certificates.k8s.io/v1beta1/certificatesigningrequests/openunison.openunison.svc.cluster.local','java.util.Base64.getDecoder().decode(JSON.parse(ws_response_json).status.certificate);check_ws_response=true;',10);
+  apiResp = k8s.callWS('/apis/certificates.k8s.io/v1beta1/certificatesigningrequests/openunison.openunison.svc.cluster.local');
   print(apiResp.data);
   certResp = JSON.parse(apiResp.data);
   b64cert = certResp.status.certificate;
+
+  if (b64cert == null || b64cert === "") {
+    print("CertManager is not enabled on this cluster.  Change USE_K8S_CM=false in your input.props");
+    exit(1);
+  }
+
   CertUtils.importSignedCert(x509data,b64cert);
 }
 
@@ -126,6 +137,40 @@ ingressX509data = CertUtils.createCertificate(ingressCertInfo);
 
 print("Import OpenUnison certificate into keystore");
 ouKs.setCertificateEntry('unison-ca',ingressX509data.getCertificate());
+
+print("Importing the dashboard");
+
+ res = k8s.callWS('/api/v1/namespaces/kube-system/pods');
+pods = JSON.parse(res.data);
+
+ k8s_db_uri = null;
+
+ for (i=0;i<pods.items.length;i++) {
+  pod = pods.items[i];
+  if (pod.metadata.name.startsWith("kubernetes-dashboard")) {
+    k8s_db_uri = pod.metadata.selfLink;
+  }
+}
+
+
+ if (k8s_db_uri == null) {
+  print("Dashboard not present, deploying");
+  k8s.kubectlCreateFromURL("https://raw.githubusercontent.com/kubernetes/dashboard/v1.10.1/src/deploy/recommended/kubernetes-dashboard.yaml");
+
+   res = k8s.callWS('/api/v1/namespaces/kube-system/pods');
+  pods = JSON.parse(res.data);
+
+
+   for (i=0;i<pods.items.length;i++) {
+    pod = pods.items[i];
+    if (pod.metadata.name.startsWith("kubernetes-dashboard")) {
+      k8s_db_uri = pod.metadata.selfLink;
+    }
+  }
+} else {
+  print("Skipping import of dashboard");
+}
+
 
 
 print("Generating dashboard tls certificate");
@@ -210,6 +255,11 @@ if (res["code"] == 409) {
     print("re-creating");
     k8s.postWS('/api/v1/namespaces/kube-system/secrets',JSON.stringify(dbsecret));
 }
+
+print("restarting the dashboard")
+
+ print("Deleting " + k8s_db_uri);
+k8s.deleteWS(k8s_db_uri);
 
 print("Create the openunison namespace");
 
