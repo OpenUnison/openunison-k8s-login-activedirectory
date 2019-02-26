@@ -24,41 +24,7 @@
     </workflows>
     
     <org name="Kubernetes Enterprise" description="Kubernetes enterprise deployment" uuid="B158BD40-0C1B-11E3-8FFD-0800200C9A66">
-            <orgs name="Audit Reports" description="List of reports for auditors and admins" uuid="d2f56bce-b0d4-44fa-8c5d-bd600b0bc589">
-                <azRules>
-                    <rule scope="group" constraint="cn=administrators,ou=groups,ou=shadow,o=Tremolo"/>
-                </azRules>
-            </orgs>
-            <orgs name="Kubernetes Namespace Administrators" description="List of projects that can be requested for administration rights" uuid="cecae082-c85d-48df-a837-4726bb755180">
-                <azRules>
-                    <rule scope="dn" constraint="o=Tremolo"/>
-                </azRules>
-            </orgs>
-            <orgs name="Kubernetes Administration" description="Request access for managing Kubernetes clusters" uuid="441a2bf1-3e47-4d40-a994-99faa15f997a">
-                <azRules>
-                    <rule scope="dn" constraint="o=Tremolo"/>
-                </azRules>
-            </orgs>
-            <orgs name="Kubernetes Namespace Viewers" description="Read only access to Kubernetes projects" uuid="97137c31-a417-4498-907d-e61f8686eb97">
-                <azRules>
-                    <rule scope="dn" constraint="o=Tremolo"/>
-                </azRules>
-            </orgs>
-            <orgs name="Approvers" description="List of approver groups.  To add a user to an approver group, request the access for the user to add with an existing approver." uuid="f9923cb2-fcc3-4ed0-9b87-f99fa4445344">
-                <azRules>
-                    <rule scope="filter" constraint="(groups=approvers-*)"/>
-                </azRules>
-            </orgs>
-            <orgs name="OpenUnison Administrators and Approvers" description="Manage access to the root administration and approval group" uuid="241f4539-efd9-4e18-8a59-649bf1b79cbe">
-              <azRules>
-                <rule scope="group" constraint="cn=administrators,ou=groups,ou=shadow,o=Tremolo" />
-              </azRules>
-            </orgs>
-            <orgs name="System workflows" description="System workflows" uuid="63ada052-881e-4685-834d-dd48a3aa4bb4">
-                <azRules>
-                    <rule scope="filter" constraint="(!(objectClass=*))"/>
-                </azRules>
-            </orgs>
+            
             <azRules/>
         </org>
         <queueConfig isUseInternalQueue="true" maxProducers="1" connectionFactory="org.apache.activemq.ActiveMQSslConnectionFactory" maxConsumers="1" multiTaskQueues="false" numQueues="1" taskQueueName="openunisuron-tasks" smtpQueueName="openunison-smtp" encryptionKeyName="session-unison">
