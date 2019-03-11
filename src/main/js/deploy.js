@@ -24,7 +24,7 @@ ouKs.load(null,ksPassword.toCharArray());
 use_k8s_cm = inProp['USE_K8S_CM'] == "true";
 
 
-
+inProp['K8S_DB_SECRET'] = java.util.UUID.randomUUID().toString();
 
 
 print("Generating openunison tls certificate");

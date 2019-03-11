@@ -48,7 +48,7 @@
         <rule scope="dn" constraint="o=Tremolo" />
       </azRules>
     </url>
-    <url regex="false" authChain="LoginService" overrideHost="true" overrideReferer="true">
+    <url regex="false" authChain="anon" overrideHost="true" overrideReferer="true">
       <!-- Any number of host tags may be specified to allow for an application to work on multiple hosts.  Additionally an asterick (*) can be specified to make this URL available for ALL hosts -->
       <host>#[OU_HOST]</host>
       <!-- The filterChain allows for transformations of the request such as manipulating attributes and injecting headers -->
@@ -61,7 +61,7 @@
       <proxyTo>http://dnm${fullURI}</proxyTo>
       <!-- List the various results that should happen -->
       <results>
-        <azSuccess>Logout</azSuccess>
+        <azSuccess>LogoutDashboard</azSuccess>
       </results>
       <!-- Determine if the currently logged in user may access the resource.  If ANY rule succeeds, the authorization succeeds.
                 The scope may be one of group, dn, filter, dynamicGroup or custom
@@ -199,7 +199,7 @@
     <!-- The name of the session cookie for this application.  Applications that want SSO between them should have the same cookie name -->
       <sessionCookieName>tremolosession</sessionCookieName>
     <!-- The domain of component of the cookie -->
-    <domain>#[OU_COOKIE_DOMAIN]</domain>
+    <domain>#[OU_HOST]</domain>
     <!-- The URL that OpenUnison will interpret as the URL to end the session -->
     <logoutURI>/logout</logoutURI>
     <!-- The name of the AES-256 key in the keystore to use to encrypt this session -->
