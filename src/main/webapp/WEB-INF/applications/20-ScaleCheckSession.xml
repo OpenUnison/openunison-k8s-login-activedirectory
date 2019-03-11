@@ -51,7 +51,7 @@
   </urls>
   <cookieConfig>
     <sessionCookieName>checksession</sessionCookieName>
-    <domain>#[OU_COOKIE_DOMAIN]</domain>
+    <domain>#[OU_HOST]</domain>
     <logoutURI>/scale/sessioncheck</logoutURI>
     <keyAlias>session-unison</keyAlias>
     <secure>true</secure>

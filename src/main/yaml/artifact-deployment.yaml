@@ -13,8 +13,9 @@ data:
     \ = Java.type(\"com.tremolosecurity.kubernetes.artifacts.util.CertUtils\");\n\n\
     print(\"Creating openunison keystore\");\n\nksPassword = inProp['unisonKeystorePassword'];\n\
     ouKs = Java.type(\"java.security.KeyStore\").getInstance(\"PKCS12\");\nouKs.load(null,ksPassword.toCharArray());\n\
-    \nuse_k8s_cm = inProp['USE_K8S_CM'] == \"true\";\n\n\n\n\n\nprint(\"Generating\
-    \ openunison tls certificate\");\ncertInfo = {\n    \"serverName\":\"openunison.openunison.svc.cluster.local\"\
+    \nuse_k8s_cm = inProp['USE_K8S_CM'] == \"true\";\n\n\ninProp['K8S_DB_SECRET']\
+    \ = java.util.UUID.randomUUID().toString();\n\n\nprint(\"Generating openunison\
+    \ tls certificate\");\ncertInfo = {\n    \"serverName\":\"openunison.openunison.svc.cluster.local\"\
     ,\n    \"ou\":\"kubernetes\",\n    \"o\":\"tremolo\",\n    \"l\":\"cloud\",\n\
     \    \"st\":\"cncf\",\n    \"c\":\"ea\",\n    \"caCert\":false\n}\n\nvar x509data\
     \ = CertUtils.createCertificate(certInfo);\n\nif (use_k8s_cm) {\n  print(\"Creating\

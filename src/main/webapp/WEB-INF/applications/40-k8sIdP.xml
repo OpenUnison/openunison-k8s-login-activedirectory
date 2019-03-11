@@ -39,13 +39,24 @@
                           <param name="accessTokenTimeToLive" value="60000"/>
                           <param name="accessTokenSkewMillis" value="120000" />
                         </trust>
+                        <trust name="https://#[K8S_DASHBOARD_HOST]">
+                          <param name="clientID" value="openunison"/>
+                          <param name="clientSecret" value="#[K8S_DB_SECRET]"/>
+                          <param name="publicEndpoint" value="false" />
+                          <param name="redirectURI" value="https://#[K8S_DASHBOARD_HOST]/auth/oidc"/>
+                          <param name="codeLastMileKeyName" value="lastmile-oidc"/>
+                          <param name="authChainName" value="LoginService"/>
+                          <param name="codeTokenSkewMilis" value="60000"/>
+                          <param name="accessTokenTimeToLive" value="60000"/>
+                          <param name="accessTokenSkewMillis" value="120000" />
+                        </trust>
                     </trusts>
                 </idp>
             </url>
         </urls>
         <cookieConfig>
             <sessionCookieName>tremolosession</sessionCookieName>
-            <domain>#[OU_COOKIE_DOMAIN]</domain>
+            <domain>#[OU_HOST]</domain>
             <scope>-1</scope>
             <logoutURI>/logout</logoutURI>
             <keyAlias>session-unison</keyAlias>
