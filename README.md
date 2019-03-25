@@ -25,7 +25,7 @@ Prior to deploying Orchestra you will need:
 1. Kubernetes 1.10 or higher
 2. The Nginx Ingress Controller deployed (https://kubernetes.github.io/ingress-nginx/deploy/)
 3. The certificate authority certificate for your Active Directory forest
-
+4. Deploy the dashboard to your cluster
 
 ## Create Environments File
 
