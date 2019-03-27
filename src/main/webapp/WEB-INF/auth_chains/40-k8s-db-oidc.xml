@@ -34,4 +34,13 @@
 
     </params>
 </authMech>
+<authMech>
+    <name>genoidctoken</name>
+    <required>required</required>
+    <params>
+      <param name="idpName" value="k8sIdp" />
+      <param name="trustName" value="kubernetes" />
+      <param name="overrideURL" value="https://#[OU_HOST]/auth/idp/k8sIdp" />
+    </params>
+  </authMech>
 </chain>
