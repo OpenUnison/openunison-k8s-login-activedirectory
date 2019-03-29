@@ -119,6 +119,21 @@ Run `kubectl describe configmap api-server-config -n openunison` to get the SSO 
 
 To login, open your browser and go to the host you specified for `OU_HOST` in your `input.props`.  For instance if `OU_HOST` is `k8sou.tremolo.lan` then navigate to https://k8sou.tremolo.lan.  You'll be prompted for your Active Directory username and password.  Once authenticated you'll be able login to the portal and generate your `.kube/config` from the Tokens screen.
 
+## Add oidc parameteres to kube-apiserver
+
+On all master nodes you need to update the kube-apiserver configuration.  First create a new file with the contents of your TLS certificate for your OU_HOST (e.g. k8sou.tremolo.lan) ```/etc/kubernetes/pki/ou-ca.pem```
+
+Then add the following parameters to ```/etc/kubernetes/manifests/kube-apiserver.yaml```.  The kube-apiservers will automatically restart.
+
+```
+    - --oidc-issuer-url=https://k8sou.tremolo.lan/auth/idp/k8sIdp
+    - --oidc-client-id=kubernetes
+    - --oidc-ca-file=/etc/kubernetes/pki/ou-ca.pem
+    - --oidc-username-claim=sub
+    - --oidc-groups-claim=groups
+```
+
+
 ## Authorizing Access via RBAC
 
 On first login, if you haven't authorized access to any Kubernetes roles you won't be able to do anything.  There are two approaches you can take:
