@@ -117,7 +117,7 @@ Run `kubectl describe configmap api-server-config -n openunison` to get the SSO 
 
 Copy the certificate to a file on your master nodes such as ```/etc/kubernetes/pki/ou-ca.pem```
 
-Then add the parameters to ```/etc/kubernetes/manifests/kube-apiserver.yaml```.  The kube-apiservers will automatically restart.
+Then add the parameters to ```/etc/kubernetes/manifests/kube-apiserver.yaml``` on your master nodes using the certificate file location above.  The kube-apiservers will automatically restart.
 
 ## First Login
 
