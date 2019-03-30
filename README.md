@@ -115,24 +115,13 @@ Once you see `Completed`, you can exit the script (`Ctl+C`).  This script create
 
 Run `kubectl describe configmap api-server-config -n openunison` to get the SSO integration artifacts.  The output will give you both the certificate that needs to be trusted and the API server flags that need to be configured on your API servers.
 
+Copy the certificate to a file on your master nodes such as ```/etc/kubernetes/pki/ou-ca.pem```
+
+Then add the parameters to ```/etc/kubernetes/manifests/kube-apiserver.yaml```.  The kube-apiservers will automatically restart.
+
 ## First Login
 
 To login, open your browser and go to the host you specified for `OU_HOST` in your `input.props`.  For instance if `OU_HOST` is `k8sou.tremolo.lan` then navigate to https://k8sou.tremolo.lan.  You'll be prompted for your Active Directory username and password.  Once authenticated you'll be able login to the portal and generate your `.kube/config` from the Tokens screen.
-
-## Add oidc parameteres to kube-apiserver
-
-On all master nodes you need to update the kube-apiserver configuration.  First create a new file with the contents of your TLS certificate for your OU_HOST (e.g. k8sou.tremolo.lan) ```/etc/kubernetes/pki/ou-ca.pem```
-
-Then add the following parameters to ```/etc/kubernetes/manifests/kube-apiserver.yaml```.  The kube-apiservers will automatically restart.
-
-```
-    - --oidc-issuer-url=https://k8sou.tremolo.lan/auth/idp/k8sIdp
-    - --oidc-client-id=kubernetes
-    - --oidc-ca-file=/etc/kubernetes/pki/ou-ca.pem
-    - --oidc-username-claim=sub
-    - --oidc-groups-claim=groups
-```
-
 
 ## Authorizing Access via RBAC
 
