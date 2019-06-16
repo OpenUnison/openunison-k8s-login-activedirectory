@@ -21,7 +21,7 @@
       <!-- If a user isn't matched in the virtual directory, ou to be assigned to -->
       <param name="noMatchOU" value="oidc" />
       <!-- How to lookup a user.  use ${claim_name} to include a claim from the user's id_token in the search -->
-      <param name="lookupFilter" value="(uid=${sub})" />
+      <param name="lookupFilter" value="(sub=${sub})" />
       <!-- If the user's object isn't matched in the virtual directory, the objectClass to assign -->
       <param name="defaultObjectClass" value="inetOrgPerson" />
       <!-- The name of the attribute in the id_token that identifies the user -->

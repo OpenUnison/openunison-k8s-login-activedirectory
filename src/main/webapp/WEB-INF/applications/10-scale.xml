@@ -172,7 +172,7 @@
                   <param name="homeURL" value="/scale/index.html"/>
                   <param name="warnMinutesLeft" value="5" />>
                   <param name="tokenClassName" value="com.tremolosecurity.scalejs.KubectlTokenLoader"/>
-                  <param name="uidAttributeName" value="uid"/>
+                  <param name="uidAttributeName" value="sub"/>
                   <param name="kubectlUsage" value="Run the kubectl command to set your user-context and server connection" />
                   <param name="k8sCaCertName" value="k8s-master"/>
                   <param name="unisonCaCertName" value="unison-ca"/>
