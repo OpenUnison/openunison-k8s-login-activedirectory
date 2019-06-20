@@ -21,7 +21,7 @@
                     <params name="k8sTarget" value="k8s" />
                     <params name="k8sNameSpace" value="openunison" />
                     <mappings strict="true">
-                        <mapping targetAttributeName="sub" targetAttributeSource="uid" sourceType="user"/>
+                        <mapping targetAttributeName="sub" targetAttributeSource="sub" sourceType="user"/>
                         <mapping targetAttributeName="name" targetAttributeSource="${givenname} ${sn}" sourceType="composite"/>
                         <mapping targetAttributeName="preferred_username" targetAttributeSource="uid" sourceType="user"/>
                         <mapping targetAttributeName="email" targetAttributeSource="mail" sourceType="user"/>
