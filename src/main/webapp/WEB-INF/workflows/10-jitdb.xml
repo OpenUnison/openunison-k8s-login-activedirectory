@@ -8,6 +8,9 @@
         <mapping targetAttributeName="TREMOLO_USER_ID" sourceType="user" targetAttributeSource="uid"/>
         <mapping targetAttributeName="sub" sourceType="user" targetAttributeSource="uid"/>
         <mapping targetAttributeName="uid" sourceType="user" targetAttributeSource="uid"/>
+        <mapping targetAttributeName="email" sourceType="static" targetAttributeSource="na"/>
+        <mapping targetAttributeName="first_name" sourceType="static" targetAttributeSource="na"/>
+        <mapping targetAttributeName="last_name" sourceType="static" targetAttributeSource="na"/>
       </map>
       <onSuccess>
 
@@ -15,6 +18,9 @@
         <provision sync="true" target="jitdb" setPassword="false" onlyPassedInAttributes="false" >
           <attributes>
             <value>sub</value>
+            <value>email</value>
+            <value>first_name</value>
+            <value>last_name</value>
             <value>uid</value>
           </attributes>
         </provision>
