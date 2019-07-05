@@ -8,9 +8,9 @@
         <mapping targetAttributeName="TREMOLO_USER_ID" sourceType="user" targetAttributeSource="uid"/>
         <mapping targetAttributeName="sub" sourceType="user" targetAttributeSource="uid"/>
         <mapping targetAttributeName="uid" sourceType="user" targetAttributeSource="uid"/>
-        <mapping targetAttributeName="email" sourceType="user" targetAttributeSource="mail"/>
-        <mapping targetAttributeName="first_name" sourceType="user" targetAttributeSource="givenName"/>
-        <mapping targetAttributeName="last_name" sourceType="user" targetAttributeSource="sn"/>
+        <mapping targetAttributeName="email" sourceType="static" targetAttributeSource="na"/>
+        <mapping targetAttributeName="first_name" sourceType="static" targetAttributeSource="na"/>
+        <mapping targetAttributeName="last_name" sourceType="static" targetAttributeSource="na"/>
       </map>
       <onSuccess>
 

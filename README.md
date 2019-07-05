@@ -25,11 +25,15 @@ Prior to deploying Orchestra you will need:
 1. Kubernetes 1.10 or higher
 2. The Nginx Ingress Controller deployed (https://kubernetes.github.io/ingress-nginx/deploy/)
 3. The certificate authority certificate for your Active Directory forest
-4. Deploy the dashboard to your cluster
+4. Deploy the dashboard to your cluster 
 
-## Create Environments File
+This installer will create the `openunison` namespace, create certificates for you (including for the dashboard) and the approprioate `CronJob` needed to make sure that certificates are kept updated.
 
-Orchestra stores environment specific information, such as host names, passwords, etc, in a properties file that will then be loaded by OpenUnison and merged with its configuration.  This file will be stored in Kubernetes as a secret then accessed by OpenUnison on startup to fill in the `#[]` parameters in `unison.xml` and `myvd.conf`.  For instance the parameter `#[OU_HOST]` in `unison.xml` would have an entry in this file.  Below is an example `input.props` file:
+## Prepare Deployment
+
+Orchestra is driven by a Kubernetes Custom Resource that stores configuration properties.  Secret properties are stored in a source secret.  The deployment tool will create the correct objects for you.  You'll need to create two properties files, one for secret information (such as passwords) and one for non-secret data.  First create a directory for non secret data, ie `/path/to/orchestra-configmaps` and create a file called `input.props` with the below content customized for your environment:
+
+
 
 ```properties
 OU_HOST=k8sou.tremolo.lan
@@ -39,7 +43,6 @@ AD_BASE_DN=cn=users,dc=ent2k12,dc=domain,dc=com
 AD_HOST=192.168.2.75
 AD_PORT=636
 AD_BIND_DN=cn=Administrator,cn=users,dc=ent2k12,dc=domain,dc=com
-AD_BIND_PASSWORD=password
 AD_CON_TYPE=ldaps
 SRV_DNS=false
 OU_CERT_OU=k8s
@@ -47,13 +50,22 @@ OU_CERT_O=Tremolo Security
 OU_CERT_L=Alexandria
 OU_CERT_ST=Virginia
 OU_CERT_C=US
-unisonKeystorePassword=start123
 USE_K8S_CM=true
 SESSION_INACTIVITY_TIMEOUT_SECONDS=900
 MYVD_CONFIG_PATH=WEB-INF/myvd.conf
 ```
 
-*Detailed Description or Properties*
+Also, place any certificates you want Orchestra to trust, including at least your Active Directory's CA certificate(s) in PEM format in `/path/to/orchestra-configmaps`.  Any certificates stored as PEM files will be trusted by Orchestra.
+
+Next create a directory for secret information, such as `/path/to/orchestra-secrets` with a file called `input.props` with at least the below information:
+
+
+```properties
+AD_BIND_PASSWORD=password
+unisonKeystorePassword=start123
+```
+
+*Detailed Description of Non-Secret Properties*
 
 | Property | Description |
 | -------- | ----------- |
@@ -64,7 +76,6 @@ MYVD_CONFIG_PATH=WEB-INF/myvd.conf
 | AD_HOST | The host name for a domain controller or VIP.  If using SRV records to determine hosts, this should be the fully qualified domain name of the domain |
 | AD_PORT | The port to communicate with Active Directory |
 | AD_BIND_DN | The full distinguished name (DN) of a read-only service account for working with Active Directory |
-| AD_BIND_PASSWORD | The password for the `AD_BIND_DN` |
 | AD_CON_TYPE | `ldaps` for secure, `ldap` for plain text |
 | SRV_DNS | If `true`, OpenUnison will lookup domain controllers by the domain's SRV DNS record |
 | OU_CERT_OU | The `OU` attribute for the forward facing certificate |
@@ -72,25 +83,26 @@ MYVD_CONFIG_PATH=WEB-INF/myvd.conf
 | OU_CERT_L | The `L` attribute for the forward facing certificate |
 | OU_CERT_ST | The `ST` attribute for the forward facing certificate |
 | OU_CERT_C | The `C` attribute for the forward facing certificate |
-| unisonKeystorePassword | The password for OpenUnison's keystore |
 | USE_K8S_CM | Tells the deployment system if you should use k8s' built in certificate manager.  If your distribution doesn't support this (such as Canonical and Rancher), set this to false |
 | SESSION_INACTIVITY_TIMEOUT_SECONDS | The number of seconds of inactivity before the session is terminated, also the length of the refresh token's session |
 | MYVD_CONFIG_PATH | The path to the MyVD configuration file, unless being customized, use `WEB-INF/myvd.conf` |
+| K8S_DASHBOARD_NAMESPACE | **Optional** If specified, the namespace for the dashboard.  For the 1.x dashboard this is `kube-system`, for the 2.x dashboard this is `kubernetes-dashboard` |
+| K8S_CLUSTER_NAME | **Optional** If specified, the name of the cluster to use in the `./kube-config`.  Defaults to `kubernetes` |
 
+*Detailed Description of Secret Properties*
 
-## Prepare Deployment
+| Property | Description |
+| -------- | ----------- |
+| AD_BIND_PASSWORD | The password for the `AD_BIND_DN` |
+| unisonKeystorePassword | The password for OpenUnison's keystore |
 
-Perform these steps from a location with a working `kubectl` configuration:
-
-1. Create a directory to store secrets, ie `/path/to/secrets`, and put `input.props` (the properties file defined above) in that directory
-2. Create a directory for config maps, ie `/apth/to/configmaps` for the Active Directory root certificate and store it there with the name `trusted-adldaps.pem`
 
 ## Deployment
 
 Based on where you put the files from `Prepare Deployment`, run the following:
 
 ```
-curl https://raw.githubusercontent.com/TremoloSecurity/kubernetes-artifact-deployment/master/src/main/bash/deploy_openunison.sh | bash -s /path/to/configmaps /path/to/secrets https://raw.githubusercontent.com/OpenUnison/openunison-k8s-login-activedirectory/master/src/main/yaml/artifact-deployment.yaml
+curl https://raw.githubusercontent.com/TremoloSecurity/kubernetes-artifact-deployment/master/src/main/bash/deploy_openunison.sh | bash -s /path/to/orchestra-configmaps /path/to/orchestra-secrets https://raw.githubusercontent.com/OpenUnison/openunison-k8s-login-activedirectory/master/src/main/yaml/artifact-deployment.yaml
 ```
 
 The output will look like:
@@ -109,11 +121,15 @@ artifact-deployment-jzmnr   1/1       Running   0         4s
 artifact-deployment-jzmnr   0/1       Completed   0         15s
 ```
 
-Once you see `Completed`, you can exit the script (`Ctl+C`).  This script creates all of the appropriate objects in Kubernetes, signs certificates and deploys both OpenUnison and the Dashboard.  
+Once you see `Completed`, you can exit the script (`Ctl+C`).  This script will import the OpenUnison operator, create the appropriate Custom Resource Defenitions and finally deploy a custom resource based on your configuration.  Once the custom resource is deployed the OpenUnison operator will deploy Orchestra for you.
+
+## Using Your Own Certificate for TLS
+
+The operator deploys a self signed certificate for use by the ingress when accessing OpenUnison and the Kubernetes Dashboard.  In order to use your own certificate, replace the `ou-tls-certificate` TLS secret in the `openunison` namespace with your own certificate and private key.  ***NOTE:***  this certificate has entries for both the dashboard and Orchestra so any certificate will need to be able to handle both URLs.
 
 ## Complete SSO Integration with Kubernetes
 
-Run `kubectl describe configmap api-server-config -n openunison` to get the SSO integration artifacts.  The output will give you both the certificate that needs to be trusted and the API server flags that need to be configured on your API servers.
+Run `kubectl describe configmap api-server-config -n openunison` to get the SSO integration artifacts.  The output will give you both the API server flags that need to be configured on your API servers.  The certificate that needs to be trusted is in the `ou-tls-certificate` secret in the `openunison` namespace.
 
 ## First Login
 
@@ -257,24 +273,37 @@ Next edit the `openunison` deployment to mount the `ConfigMap` to `/etc/myvd` an
 
 # Updating Secrets and Certificates
 
-In order to change the secrets or update certificate store:
+To update any of the secrets in the source secret:
 
-Download the contents of `openunison-secrets` in the `openunison` namespace into an empty directory
+1. Update the `orchestra-secrets-source` secret in the `openunison` namespace as appropriate
+2. Add an annotation (or edit an existing one) on the `orchestra` `openunison` object in the `openunison` namespace
+
+This will trigger the operator to update your OpenUnison pods.  To update certificates or non-secret data, just update it in the `orchestra` `openunison` object.
+
+# Customizing Orchestra
+
+Orchestra is an application built on OpenUnison with several "opinions" on how you should manage authentication in your cluster.  These opinions my be close to what you need, but not exact.  In order to customize Orchestra you'll need:
+
+1. git
+2. OpenJDK 8
+3. Apache Maven
+4. Docker registry
+
+First, fork this GitHub project.  Then make your edits.  To deploy to a local Docker daemon that you want to then use to push to a registry:
 
 ```
-kubectl get  secret openunison-secrets -o json  -n openunison | python /path/to/openunison-k8s-idm-oidc/src/main/python/download_secrets.py
+mvn clean package
+mvn compile jib:dockerBuild
+docker tag image:version registry/image:version
+docker push registry/image:version
 ```
 
-`download_secrets.py` is a utility script for pulling the files out of secrets and config maps.  Next, make your changes.  You can't apply over an existing secret, so next delete the current secret:
+If you have credentials to access a registry remotely and are not running docker locally, you can push the image directly to your registry:
 
 ```
-kubectl delete secret openunison-secrets -n openunison
+mvn clean package
+export OU_CONTAINER_DEST=registry/image:version
+export OU_REG_USER=registry_user
+export OU_REG_PASSWORD=registry_password
+mvn compile jib:build
 ```
-
-Finally, create the secret from the directory where you downloaded the secrets:
-
-```
-kubectl create secret generic openunison-secrets --from-file=. -n openunison
-```
-
-Redeploy Orchestra to pick up the changes.  The easiest way is to update an environment variable in the `openunison` deployment
