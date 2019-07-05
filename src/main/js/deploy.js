@@ -17,251 +17,222 @@ var CertUtils = Java.type("com.tremolosecurity.kubernetes.artifacts.util.CertUti
 
 print("Creating openunison keystore");
 
+
+
+
 ksPassword = inProp['unisonKeystorePassword'];
 ouKs = Java.type("java.security.KeyStore").getInstance("PKCS12");
 ouKs.load(null,ksPassword.toCharArray());
 
-use_k8s_cm = inProp['USE_K8S_CM'] == "true";
+use_k8s_cm = nonSecretInProp['USE_K8S_CM'] == "true";
 
 
 inProp['K8S_DB_SECRET'] = java.util.UUID.randomUUID().toString();
 
+var docker_image = 'docker.io/tremolosecurity/openunison-k8s-login-activedirectory:latest';
+
+if (nonSecretInProp['image'] != null) {
+  docker_image = nonSecretInProp['image'];
+  delete nonSecretInProp['image'];
+}
+
+
+print("Runing kubectl create");
+k8s.kubectlCreate(deploymentTemplate);
+print("kubectl complete");
+
+
+
+
+
+ou_cr = {
+  "apiVersion": "openunison.tremolo.io/v1",
+  "kind": "OpenUnison",
+  "metadata": {
+      "name": "orchestra"
+  },
+  "spec": {
+      "dest_secret": "orchestra",
+      "enable_activemq": false,
+      "hosts": [
+          {
+              "ingress_name": "openunison",
+              "names": [
+                  {
+                      "env_var": "OU_HOST",
+                      "name": nonSecretInProp['OU_HOST']
+                  },
+                  {
+                    "env_var":"K8S_DASHBOARD_HOST",
+                    "name": nonSecretInProp['K8S_DASHBOARD_HOST']
+                  }
+              ],
+              "secret_name":"ou-tls-certificate"
+          }
+      ],
+      "key_store": {
+        "update_controller":{
+          "image" : "docker.io/tremolosecurity/kubernetes-artifact-deployment:1.1.0",
+          "schedule" : "0 2 * * *",
+          "days_to_expire" : 10
+        },
+        "key_pairs" : {
+          "create_keypair_template": [
+            {
+                "name": "ou",
+                "value": nonSecretInProp['OU_CERT_OU']
+            },
+            {
+                "name": "o",
+                "value": nonSecretInProp['OU_CERT_O']
+            },
+            {
+                "name": "l",
+                "value": nonSecretInProp['OU_CERT_L']
+            },
+            {
+                "name": "st",
+                "value": nonSecretInProp['OU_CERT_ST']
+            },
+            {
+                "name": "c",
+                "value": nonSecretInProp['OU_CERT_C']
+            }
+          ],
+          "keys" : []
+        },
+        "static_keys":[],
+        "trusted_certificates":[]
+      },
+      "non_secret_data":[],
+      "openunison_network_configuration": {
+        "activemq_dir": "/tmp/amq",
+        "allowed_client_names": [],
+        "ciphers": [
+            "TLS_RSA_WITH_RC4_128_SHA",
+            "TLS_RSA_WITH_AES_128_CBC_SHA",
+            "TLS_RSA_WITH_AES_256_CBC_SHA",
+            "TLS_RSA_WITH_3DES_EDE_CBC_SHA",
+            "TLS_RSA_WITH_AES_128_CBC_SHA256",
+            "TLS_RSA_WITH_AES_256_CBC_SHA256"
+        ],
+        "client_auth": "none",
+        "force_to_secure": true,
+        "open_external_port": 80,
+        "open_port": 8080,
+        "path_to_deployment": "/usr/local/openunison/work",
+        "path_to_env_file": "/etc/openunison/ou.env",
+        "quartz_dir": "/tmp/quartz",
+        "secure_external_port": 443,
+        "secure_key_alias": "unison-tls",
+        "secure_port": 8443
+    },
+    "replicas": 1,
+    "secret_data": [],
+    "source_secret": "orchestra-secrets-source",
+    "image": docker_image
+  }
+};
+
+
 
 print("Generating openunison tls certificate");
-certInfo = {
-    "serverName":"openunison.openunison.svc.cluster.local",
-    "ou":"kubernetes",
-    "o":"tremolo",
-    "l":"cloud",
-    "st":"cncf",
-    "c":"ea",
-    "caCert":false
-}
 
-var x509data = CertUtils.createCertificate(certInfo);
+outls = {
+  "create_data" : {
+    "ca_cert":true,
+    "key_size":2048,
+    "server_name":"openunison.openunison.svc.cluster.local",
+    "sign_by_k8s_ca":use_k8s_cm,
+    "subject_alternative_names":[]
+  },
+  "import_into_ks" : "keypair",
+  "name": "unison-tls"
 
-if (use_k8s_cm) {
-  print("Creating CSR for API server");
+};
+
+ou_cr.spec.key_store.key_pairs.keys.push(outls);
 
 
+outls = {
+  "create_data" : {
+    "ca_cert":true,
+    "key_size":2048,
+    "server_name":nonSecretInProp['OU_HOST'],
+    "sign_by_k8s_ca":false,
+    "subject_alternative_names":[
+      nonSecretInProp['K8S_DASHBOARD_HOST']
+    ]
+  },
+  "import_into_ks" : "certificate",
+  "name": "unison-ca",
+  "tls_secret_name":"ou-tls-certificate"
 
-  csrReq = {
-      "apiVersion": "certificates.k8s.io/v1beta1",
-      "kind": "CertificateSigningRequest",
-      "metadata": {
-        "name": "openunison.openunison.svc.cluster.local",
-      },
-      "spec": {
-        "request": java.util.Base64.getEncoder().encodeToString(CertUtils.generateCSR(x509data).getBytes("utf-8")),
-        "usages": [
-          "digital signature",
-          "key encipherment",
-          "server auth"
-        ]
-      }
-    };
+};
 
-  print("Requesting certificate");
-  apiResp = k8s.postWS('/apis/certificates.k8s.io/v1beta1/certificatesigningrequests',JSON.stringify(csrReq));
+ou_cr.spec.key_store.key_pairs.keys.push(outls);
 
-  if (apiResp.code == 409) {
-    print("CertManager is not enabled on this cluster.  Change USE_K8S_CM=false in your input.props");
-    exit(1);
-  }
+print("Generating the dashboard certificate");
 
-  print("Approving certificate");
-  approveReq = JSON.parse(apiResp.data);
-  approveReq.status.conditions = [
-      {
-          "type":"Approved",
-          "reason":"OpenUnison Deployment",
-          "message":"This CSR was approved by the OpenUnison artifact deployment job"
-      }
-  ];
+outls = {
+  "create_data" : {
+    "ca_cert":(! use_k8s_cm),
+    "key_size":2048,
+    "server_name":"kubernetes-dashboard.kube-system.svc.cluster.local",
+    "sign_by_k8s_ca":use_k8s_cm,
+    "subject_alternative_names":[],
+    "target_namespace":"kube-system",
+    "secret_info":{
+      "type_of_secret":"Opaque",
+      "cert_name":"dashboard.crt",
+      "key_name":"dashboard.key"
+      
+    },
+    "delete_pods_labels" : ["k8s-app=kubernetes-dashboard"]
+  },
+  "import_into_ks" : (use_k8s_cm ? "none" : "certificate"),
+  "name": "kubernetes-dashboard",
+  "tls_secret_name":"kubernetes-dashboard-certs",
+  "replace_if_exists": true
+  
 
-  apiResp = k8s.putWS('/apis/certificates.k8s.io/v1beta1/certificatesigningrequests/openunison.openunison.svc.cluster.local/approval',JSON.stringify(approveReq));
-  print("Retrieving certificate from API server");
-  apiResp = k8s.callWS('/apis/certificates.k8s.io/v1beta1/certificatesigningrequests/openunison.openunison.svc.cluster.local');
-  print(apiResp.data);
-  certResp = JSON.parse(apiResp.data);
-  b64cert = certResp.status.certificate;
+};
 
-  if (b64cert == null || b64cert === "") {
-    print("CertManager is not enabled on this cluster.  Change USE_K8S_CM=false in your input.props");
-    exit(1);
-  }
+ou_cr.spec.key_store.key_pairs.keys.push(outls);
 
-  CertUtils.importSignedCert(x509data,b64cert);
-}
 
 print("Saving certificate to keystore");
-CertUtils.saveX509ToKeystore(ouKs,ksPassword,"unison-tls",x509data);
-CertUtils.createKey(ouKs,"session-unison",ksPassword);
-CertUtils.createKey(ouKs,"lastmile-oidc",ksPassword);
+
+ou_cr.spec.key_store.static_keys.push({
+  "name":"session-unison",
+  "version":1
+});
+
+ou_cr.spec.key_store.static_keys.push({
+  "name":"lastmile-oidc",
+  "version":1
+});
+
+
 
 print("Generating OIDC Certificate");
 
-certInfo = {
-    "serverName":"unison-saml2-rp-sig",
-    "ou":"kubernetes",
-    "o":"tremolo",
-    "l":"cloud",
-    "st":"cncf",
-    "c":"ea",
-    "caCert":false
-}
+outls = {
+  "create_data" : {
+    "ca_cert":true,
+    "key_size":2048,
+    "server_name":"unison-saml2-rp-sig",
+    "sign_by_k8s_ca":false,
+    "subject_alternative_names":[]
+  },
+  "import_into_ks" : "keypair",
+  "name": "unison-saml2-rp-sig"
 
-x509data = CertUtils.createCertificate(certInfo);
-CertUtils.saveX509ToKeystore(ouKs,ksPassword,"unison-saml2-rp-sig",x509data);
-
-print("Storing k8s and AD certs");
-ouKs.setCertificateEntry('trusted-adldaps',k8s.getCertificate('trusted-adldaps'));
-ouKs.setCertificateEntry('k8s-master',k8s.getCertificate('k8s-master'));
-
-print("Generate Ingress Certificate");
-
-ingressCertInfo = {
-    "serverName": inProp["OU_HOST"],
-    "ou":inProp["OU_CERT_OU"],
-    "o":inProp["OU_CERT_O"],
-    "l":inProp["OU_CERT_L"],
-    "st":inProp["OU_CERT_ST"],
-    "c":inProp["OU_CERT_C"],
-    "caCert":true,
-    "subjectAlternativeNames":[
-        inProp["K8S_DASHBOARD_HOST"]
-    ]
-}
-
-ingressX509data = CertUtils.createCertificate(ingressCertInfo);
-
-print("Import OpenUnison certificate into keystore");
-ouKs.setCertificateEntry('unison-ca',ingressX509data.getCertificate());
-
-print("Importing the dashboard");
-
- res = k8s.callWS('/api/v1/namespaces/kube-system/pods');
-pods = JSON.parse(res.data);
-
- k8s_db_uri = null;
-
- for (i=0;i<pods.items.length;i++) {
-  pod = pods.items[i];
-  if (pod.metadata.name.startsWith("kubernetes-dashboard")) {
-    k8s_db_uri = pod.metadata.selfLink;
-  }
-}
-
-
- if (k8s_db_uri == null) {
-  print("Dashboard not present, deploying");
-  k8s.kubectlCreateFromURL("https://raw.githubusercontent.com/kubernetes/dashboard/v1.10.1/src/deploy/recommended/kubernetes-dashboard.yaml");
-
-   res = k8s.callWS('/api/v1/namespaces/kube-system/pods');
-  pods = JSON.parse(res.data);
-
-
-   for (i=0;i<pods.items.length;i++) {
-    pod = pods.items[i];
-    if (pod.metadata.name.startsWith("kubernetes-dashboard")) {
-      k8s_db_uri = pod.metadata.selfLink;
-    }
-  }
-} else {
-  print("Skipping import of dashboard");
-}
-
-
-
-print("Generating dashboard tls certificate");
-dbCertInfo = {
-    "serverName":"kubernetes-dashboard.kube-system.svc.cluster.local",
-    "ou":"kubernetes",
-    "o":"tremolo",
-    "l":"cloud",
-    "st":"cncf",
-    "c":"ea",
-    "caCert":false
-}
-
-dbX509data = CertUtils.createCertificate(dbCertInfo);
-
-if (use_k8s_cm) {
-  print("Creating CSR for API server");
-
-
-
-  csrReq = {
-      "apiVersion": "certificates.k8s.io/v1beta1",
-      "kind": "CertificateSigningRequest",
-      "metadata": {
-        "name": "kubernetes-dashboard.kube-system.svc.cluster.local",
-      },
-      "spec": {
-        "request": java.util.Base64.getEncoder().encodeToString(CertUtils.generateCSR(dbX509data).getBytes("utf-8")),
-        "usages": [
-          "digital signature",
-          "key encipherment",
-          "server auth"
-        ]
-      }
-    };
-
-  print("Requesting certificate");
-  apiResp = k8s.postWS('/apis/certificates.k8s.io/v1beta1/certificatesigningrequests',JSON.stringify(csrReq));
-  print("Approving certificate");
-  approveReq = JSON.parse(apiResp.data);
-  approveReq.status.conditions = [
-      {
-          "type":"Approved",
-          "reason":"OpenUnison Deployment",
-          "message":"This CSR was approved by the OpenUnison artifact deployment job"
-      }
-  ];
-
-  apiResp = k8s.putWS('/apis/certificates.k8s.io/v1beta1/certificatesigningrequests/kubernetes-dashboard.kube-system.svc.cluster.local/approval',JSON.stringify(approveReq));
-  print("Retrieving certificate from API server");
-  apiResp = k8s.callWS('/apis/certificates.k8s.io/v1beta1/certificatesigningrequests/kubernetes-dashboard.kube-system.svc.cluster.local','java.util.Base64.getDecoder().decode(JSON.parse(ws_response_json).status.certificate);check_ws_response=true;',10);
-  print(apiResp.data);
-  certResp = JSON.parse(apiResp.data);
-  b64cert = certResp.status.certificate;
-  CertUtils.importSignedCert(dbX509data,b64cert);
-} else {
-  //not using k8s cm, so just import the dashboard cert into the openunison keystore
-  ouKs.setCertificateEntry("trusted-k8s-dasboard",dbX509data.getCertificate());
-}
-print("Creating dashboard secret");
-
-dbsecret = {
-    "apiVersion":"v1",
-    "kind":"Secret",
-    "type":"Opaque",
-    "metadata": {
-        "name":"kubernetes-dashboard-certs",
-        "namespace":"kube-system"
-    },
-    "data":{
-        "dashboard.crt": java.util.Base64.getEncoder().encodeToString(CertUtils.exportCert(dbX509data.getCertificate()).getBytes("UTF-8")),
-        "dashboard.key": java.util.Base64.getEncoder().encodeToString(CertUtils.exportKey(dbX509data.getKeyData().getPrivate()).getBytes("UTF-8"))
-    }
 };
 
-res = k8s.postWS('/api/v1/namespaces/kube-system/secrets',JSON.stringify(dbsecret));
+ou_cr.spec.key_store.key_pairs.keys.push(outls);
 
-if (res["code"] == 409) {
-    print("Secret alread exists, lets delete then recreate");
-    k8s.deleteWS('/api/v1/namespaces/kube-system/secrets/kubernetes-dashboard-certs');
 
-    print("re-creating");
-    k8s.postWS('/api/v1/namespaces/kube-system/secrets',JSON.stringify(dbsecret));
-}
-
-print("restarting the dashboard")
-
- print("Deleting " + k8s_db_uri);
-k8s.deleteWS(k8s_db_uri);
-
-print("Create the openunison namespace");
 
 ouNS = {
     "apiVersion":"v1",
@@ -276,33 +247,319 @@ ouNS = {
 
 k8s.postWS('/api/v1/namespaces',JSON.stringify(ouNS));
 
-print("Create openunison service account");
+print("Create operator rbac policies");
 
-k8s.postWS('/api/v1/namespaces/openunison/serviceaccounts',JSON.stringify({"apiVersion":"v1","kind":"ServiceAccount","metadata":{"creationTimestamp":null,"name":"openunison"}}));
+k8s_obj = {
+  "apiVersion": "rbac.authorization.k8s.io/v1",
+  "kind": "Role",
+  "metadata": {
+    "name": "openunison-operator-role"
+  },
+  "rules": [
+    {
+      "apiGroups": [
+        "openunison.tremolo.io",
+        "",
+        "apps",
+        "rbac.authorization.k8s.io",
+        "extensions",
+        "apps.openshift.io",
+        "build.openshift.io",
+        "image.openshift.io",
+        "route.openshift.io",
+        "user.openshift.io",
+        "batch"
+      ],
+      "resources": [
+        "routes/custom-host",
+        "imagestreamimports",
+        "users",
+        "groups",
+        "routes",
+        "images",
+        "imagestreams",
+        "builds",
+        "buildconfigs",
+        "deploymentconfigs",
+        "openunisons",
+        "openunisons/status",
+        "pods",
+        "deployments",
+        "secrets",
+        "configmaps",
+        "services",
+        "serviceaccounts",
+        "roles",
+        "rolebindings",
+        "ingresses",
+        "cronjobs"
+      ],
+      "verbs": [
+        "*"
+      ]
+    }
+  ]
+};
 
 
 
+k8s.postWS('/apis/rbac.authorization.k8s.io/v1/namespaces/openunison/roles',JSON.stringify(k8s_obj));
 
-print("Create Ingress TLS Secret");
+print("Creating rbac binding");
 
-ingressSecret = {
-    "apiVersion":"v1",
-    "kind":"Secret",
-    "type":"kubernetes.io/tls",
+k8s_obj = {
+  "apiVersion": "rbac.authorization.k8s.io/v1",
+  "kind": "RoleBinding",
+  "metadata": {
+    "name": "openunison-operator-rolebinding"
+  },
+  "roleRef": {
+    "apiGroup": "rbac.authorization.k8s.io",
+    "kind": "Role",
+    "name": "openunison-operator-role"
+  },
+  "subjects": [
+    {
+      "kind": "ServiceAccount",
+      "name": "openunison-operator",
+      "namespace":"openunison"
+    }
+  ]
+};
+
+k8s.postWS('/apis/rbac.authorization.k8s.io/v1/namespaces/openunison/rolebindings',JSON.stringify(k8s_obj));
+
+print("Creating the operator service account");
+
+k8s_obj = {
+  "apiVersion": "v1",
+  "kind": "ServiceAccount",
+  "metadata": {
+    "name": "openunison-operator"
+  }
+};
+
+k8s.postWS('/api/v1/namespaces/openunison/serviceaccounts',JSON.stringify(k8s_obj));
+
+k8sDashboardNamespace = "kube-system";
+
+if (nonSecretInProp['K8S_DASHBOARD_NAMESPACE'] != null) {
+    print("Getting k8s dashboard namespace from the configuration");
+    k8sDashboardNamespace = inProp['K8S_DASHBOARD_NAMESPACE'];
+}
+
+obj = {
+    "kind": "Role",
+    "apiVersion": "rbac.authorization.k8s.io/v1",
     "metadata": {
-        "name":"ou-tls-certificate",
-        "namespace":"openunison"
+        "namespace": k8sDashboardNamespace,
+        "name": "orchestra-dashboard"
     },
-    "data":{
-        "tls.crt": java.util.Base64.getEncoder().encodeToString(CertUtils.exportCert(ingressX509data.getCertificate()).getBytes("UTF-8")),
-        "tls.key": java.util.Base64.getEncoder().encodeToString(CertUtils.exportKey(ingressX509data.getKeyData().getPrivate()).getBytes("UTF-8"))
+    "rules": [
+        {
+            "apiGroups": [
+                ""
+            ],
+            "resources": [
+                "secrets",
+                "pods"
+            ],
+            "verbs": [
+                "*"
+            ]
+        }
+    ]
+};
+
+k8s.postWS('/apis/rbac.authorization.k8s.io/v1/namespaces/' + k8sDashboardNamespace + '/roles',JSON.stringify(obj));
+
+obj = {
+    "kind": "RoleBinding",
+    "apiVersion": "rbac.authorization.k8s.io/v1",
+    "metadata": {
+        "name": "orchestra-dashboard",
+        "namespace": k8sDashboardNamespace
+    },
+    "subjects": [
+        {
+            "kind": "ServiceAccount",
+            "name": "openunison-operator",
+            "namespace": "openunison"
+        }
+    ],
+    "roleRef": {
+        "kind": "Role",
+        "name": "orchestra-dashboard",
+        "apiGroup": "rbac.authorization.k8s.io"
     }
 };
 
-k8s.postWS('/api/v1/namespaces/openunison/secrets',JSON.stringify(ingressSecret));
+k8s.postWS('/apis/rbac.authorization.k8s.io/v1/namespaces/' + k8sDashboardNamespace + '/rolebindings',JSON.stringify(obj));
 
 
-print("Create OpenUnison Secret");
+obj = {
+  "kind": "ClusterRole",
+  "apiVersion": "rbac.authorization.k8s.io/v1",
+  "metadata": {
+      "name": "orchestra-certs"
+  },
+  "rules": [
+      {
+          "apiGroups": [
+              "certificates.k8s.io",
+          ],
+          "resources": [
+              "certificatesigningrequests",
+              "certificatesigningrequests/approval"
+
+          ],
+          "verbs": [
+              "*"
+          ]
+      }
+  ]
+};
+
+k8s.postWS('/apis/rbac.authorization.k8s.io/v1/clusterroles',JSON.stringify(obj));
+
+obj = {
+  "kind": "ClusterRoleBinding",
+  "apiVersion": "rbac.authorization.k8s.io/v1",
+  "metadata": {
+      "name": "orchestra-certs"
+  },
+  "subjects": [
+      {
+          "kind": "ServiceAccount",
+          "name": "openunison-operator",
+          "namespace": "openunison"
+      }
+  ],
+  "roleRef": {
+      "kind": "ClusterRole",
+      "name": "orchestra-certs",
+      "apiGroup": "rbac.authorization.k8s.io"
+  }
+};
+
+k8s.postWS('/apis/rbac.authorization.k8s.io/v1/clusterrolebindings',JSON.stringify(obj));
+
+
+
+print("Creating the operator deployment");
+
+k8s_obj = {
+  "apiVersion": "apps/v1",
+  "kind": "Deployment",
+  "metadata": {
+    "labels": {
+      "app": "openunison-operator"
+    },
+    "name": "openunison-operator"
+  },
+  "spec": {
+    "progressDeadlineSeconds": 600,
+    "replicas": 1,
+    "revisionHistoryLimit": 10,
+    "selector": {
+      "matchLabels": {
+        "app": "openunison-operator"
+      }
+    },
+    "strategy": {
+      "rollingUpdate": {
+        "maxSurge": "25%",
+        "maxUnavailable": "25%"
+      },
+      "type": "RollingUpdate"
+    },
+    "template": {
+      "metadata": {
+        "creationTimestamp": null,
+        "labels": {
+          "app": "openunison-operator"
+        }
+      },
+      "spec": {
+        "containers": [
+          {
+            "env": [
+              {
+                "name": "JAVA_OPTS",
+                "value": "-Djava.awt.headless=true -Djava.security.egd=file:/dev/./urandom"
+              },
+              {
+                "name": "NAMESPACE",
+                "valueFrom": {
+                  "fieldRef": {
+                    "fieldPath": "metadata.namespace"
+                  }
+                }
+              },
+              {
+                "name":"EXTRA_JS",
+                "value":"/usr/local/openunison/js-external"
+              }
+            ],
+            "image": "docker.io/tremolosecurity/openunison-k8s-operator",
+            "command": [
+              "java",
+              "-jar",
+              "/usr/local/openunison/javascript-operator.jar",
+              "-tokenPath",
+              "/var/run/secrets/kubernetes.io/serviceaccount/token",
+              "-rootCaPath",
+              "/var/run/secrets/kubernetes.io/serviceaccount/ca.crt",
+              "-kubernetesURL",
+              "https://kubernetes.default.svc.cluster.local",
+              "-namespace",
+              "NAMESPACE",
+              "-apiGroup",
+              "openunison.tremolo.io/v1",
+              "-objectType",
+              "openunisons",
+              "-jsPath",
+              "/usr/local/openunison/js",
+              "-configMaps",
+              "/etc/extraMaps"
+            ],
+            "imagePullPolicy": "Always",
+            "name": "openunison-operator",
+            "resources": {
+            },
+            "terminationMessagePath": "/dev/termination-log",
+            "terminationMessagePolicy": "File",
+            "volumeMounts": [
+              {
+                "mountPath": "/etc/extraMaps",
+                "name": "extra-maps",
+                "readOnly": true
+              }
+            ]
+          }
+        ],
+        "dnsPolicy": "ClusterFirst",
+        "restartPolicy": "Always",
+        "terminationGracePeriodSeconds": 30,
+        "serviceAccount": "openunison-operator",
+        "volumes": [
+          {
+            "name": "extra-maps",
+            "emptyDir": {
+            }
+          }
+        ]
+      }
+    }
+  }
+};
+
+k8s.postWS('/apis/apps/v1/namespaces/openunison/deployments',JSON.stringify(k8s_obj));
+
+//k8s.postWS('/apis/openunison.tremolo.io/v1/namespaces/openunison/openunisons',JSON.stringify(k8s_obj));
+
+
+print("Create OpenUnison Source Secret");
 
 
 ouSecrets = {
@@ -310,21 +567,51 @@ ouSecrets = {
     "kind":"Secret",
     "type":"Opaque",
     "metadata": {
-        "name":"openunison-secrets",
+        "name":"orchestra-secrets-source",
         "namespace":"openunison"
     },
     "data":{
-      "openunison.yaml":"LS0tCm9wZW5fcG9ydDogODA4MApvcGVuX2V4dGVybmFsX3BvcnQ6IDgwCnNlY3VyZV9wb3J0OiA4NDQzCnNlY3VyZV9leHRlcm5hbF9wb3J0OiA0NDMKc2VjdXJlX2tleV9hbGlhczogInVuaXNvbi10bHMiCmZvcmNlX3RvX3NlY3VyZTogdHJ1ZQphY3RpdmVtcV9kaXI6ICIvdG1wL2FtcSIKcXVhcnR6X2RpcjogIi90bXAvcXVhcnR6IgpjbGllbnRfYXV0aDogbm9uZQphbGxvd2VkX2NsaWVudF9uYW1lczogW10KY2lwaGVyczoKLSBUTFNfUlNBX1dJVEhfUkM0XzEyOF9TSEEKLSBUTFNfUlNBX1dJVEhfQUVTXzEyOF9DQkNfU0hBCi0gVExTX1JTQV9XSVRIX0FFU18yNTZfQ0JDX1NIQQotIFRMU19SU0FfV0lUSF8zREVTX0VERV9DQkNfU0hBCi0gVExTX1JTQV9XSVRIX0FFU18xMjhfQ0JDX1NIQTI1NgotIFRMU19SU0FfV0lUSF9BRVNfMjU2X0NCQ19TSEEyNTYKcGF0aF90b19kZXBsb3ltZW50OiAiL3Vzci9sb2NhbC9vcGVudW5pc29uL3dvcmsiCnBhdGhfdG9fZW52X2ZpbGU6ICIvZXRjL29wZW51bmlzb24vb3UuZW52IgoK",
-      "ou.env":k8s.encodeMap(inProp),
-      "unisonKeyStore.p12":CertUtils.encodeKeyStore(ouKs,ksPassword)
+      
     }
+}
+
+for each (var key in inProp.keySet()) {
+  
+    ouSecrets.data[key] =  java.util.Base64.getEncoder().encodeToString(inProp[key].getBytes("UTF-8"));
+    ou_cr.spec.secret_data.push(key);
+  
 }
 
 k8s.postWS('/api/v1/namespaces/openunison/secrets',JSON.stringify(ouSecrets));
 
+print("Adding non-secret properties to CR");
+
+for each (var key in nonSecretInProp.keySet()) {
+  
+    ou_cr.spec.non_secret_data.push( {
+      "name": key,
+      "value": nonSecretInProp[key]
+    });
+  
+}
+
+print("Adding trusted certs to the cr");
+
+var trusted_certs = k8s.getExtraCerts();
+
+for each (var key in trusted_certs.keySet()) {
+  ou_cr.spec.key_store.trusted_certificates.push({
+    "name" : key,
+    "pem_data" : trusted_certs[key]
+  });
+}
+
+print(JSON.stringify(ou_cr));
+
+
 print("Creating post deployment configmap");
 
-oidcFlags = "--oidc-issuer-url=https://" + inProp["OU_HOST"] + "/auth/idp/k8sIdp\n" +
+oidcFlags = "--oidc-issuer-url=https://" + nonSecretInProp["OU_HOST"] + "/auth/idp/k8sIdp\n" +
             "--oidc-client-id=kubernetes\n" +
             "--oidc-username-claim=sub\n" + 
             "--oidc-groups-claim=groups\n" +
@@ -342,13 +629,23 @@ cfgMap = {
         "namespace":"openunison"
     },
     "data":{
-        "oidc-api-server-flags":oidcFlags,
-        "ou-ca.pem-base64-encoded":CertUtils.exportCert(ingressX509data.getCertificate())
-        //"deployment":java.util.Base64.getEncoder().encodeToString(k8s.processTemplate(deploymentTemplate,inProp).getBytes("UTF-8"))
+        "oidc-api-server-flags":oidcFlags
     }
 };
 
 k8s.postWS('/api/v1/namespaces/openunison/configmaps',JSON.stringify(cfgMap));
+
+
+print("Waiting for the OpenUnison operator to be deployed");
+
+k8s.callWS('/api/v1/namespaces/openunison/pods?labelSelector=app%3Dopenunison-operator&limit=500',"check_ws_response = (JSON.parse(ws_response_json).items[0].status.phase == 'Running') ",20);
+
+
+
+print("Deploying the CR");
+
+print(k8s.postWS('/apis/openunison.tremolo.io/v1/namespaces/openunison/openunisons',JSON.stringify(ou_cr))["data"]);
+
 
 print("Deleting cluster role binding");
 k8s.deleteWS('/apis/rbac.authorization.k8s.io/v1/clusterrolebindings/artifact-deployment');
