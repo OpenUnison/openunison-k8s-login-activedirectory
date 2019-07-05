@@ -105,24 +105,10 @@
           <param name="attributeNames" value="sub"/>
           <param name="sub.displayName" value="Login ID"/>
           <param name="sub.readOnly" value="true"/>
-          <param name="attributeNames" value="givenName"/>
-          <param name="givenName.displayName" value="First Name"/>
-          <param name="givenName.readOnly" value="true"/>
-          <param name="attributeNames" value="sn"/>
-          <param name="sn.displayName" value="Last Name"/>
-          <param name="sn.readOnly" value="true"/>
-          <param name="attributeNames" value="mail"/>
-          <param name="mail.displayName" value="Email Address"/>
-          <param name="mail.readOnly" value="true"/>
-          <param name="attributeNames" value="mail"/>
-          <param name="mail.displayName" value="Email Address"/>
-          <param name="mail.readOnly" value="true"/>
           <param name="uidAttributeName" value="uid"/>
           <param name="roleAttribute" value="groups"/>
           <param name="approvalAttributeNames" value="uid"/>
-          <param name="approvalAttributeNames" value="mail"/>
           <param name="approvals.uid" value="Login ID"/>
-          <param name="approvals.mail" value="Email Address"/>
           <param name="showPortalOrgs" value="false"/>
           <param name="logoutURL" value="/logout"/>
           <param name="canDelegate" value="NO" />
@@ -165,7 +151,7 @@
                 <host>#[OU_HOST]</host>
                 <filterChain>
                   <filter class="com.tremolosecurity.scalejs.token.ws.ScaleToken">
-                  <param name="displayNameAttribute" value="mail"/>
+                  <param name="displayNameAttribute" value="sub"/>
                   <param name="frontPage.title" value="Kubernetes kubectl command"/>
                   <param name="frontPage.text" value="First install the certificates for Kubernetes and OpenUnison into your system's trust store, then use this kubectl command to set your user in .kubectl/config"/>
                   <param name="logoutURL" value="/logout"/>

@@ -27,7 +27,7 @@ Prior to deploying Orchestra you will need:
 3. The certificate authority certificate for your Active Directory forest
 4. Deploy the dashboard to your cluster 
 
-If your cluster supports its own internal CA
+This installer will create the `openunison` namespace, create certificates for you (including for the dashboard) and the approprioate `CronJob` needed to make sure that certificates are kept updated.
 
 ## Prepare Deployment
 
