@@ -11,7 +11,10 @@ data:
     //    See the License for the specific language governing permissions and\n//\
     \    limitations under the License.\n\nprint(\"Loading CertUtils\");\nvar CertUtils\
     \ = Java.type(\"com.tremolosecurity.kubernetes.artifacts.util.CertUtils\");\n\n\
-    print(\"Creating openunison keystore\");\n\n\n\n\nksPassword = inProp['unisonKeystorePassword'];\n\
+    print(\"Creating openunison keystore\");\n\nk8sDashboardNamespace = \"kube-system\"\
+    ;\n\nif (nonSecretInProp['K8S_DASHBOARD_NAMESPACE'] != null) {\n    print(\"Getting\
+    \ k8s dashboard namespace from the configuration\");\n    k8sDashboardNamespace\
+    \ = nonSecretInProp['K8S_DASHBOARD_NAMESPACE'];\n}\n\n\nksPassword = inProp['unisonKeystorePassword'];\n\
     ouKs = Java.type(\"java.security.KeyStore\").getInstance(\"PKCS12\");\nouKs.load(null,ksPassword.toCharArray());\n\
     \nuse_k8s_cm = nonSecretInProp['USE_K8S_CM'] == \"true\";\n\n\ninProp['K8S_DB_SECRET']\
     \ = java.util.UUID.randomUUID().toString();\n\nvar docker_image = 'docker.io/tremolosecurity/openunison-k8s-login-activedirectory:latest';\n\
@@ -64,16 +67,17 @@ data:
     ,\n  \"tls_secret_name\":\"ou-tls-certificate\"\n\n};\n\nou_cr.spec.key_store.key_pairs.keys.push(outls);\n\
     \nprint(\"Generating the dashboard certificate\");\n\noutls = {\n  \"create_data\"\
     \ : {\n    \"ca_cert\":(! use_k8s_cm),\n    \"key_size\":2048,\n    \"server_name\"\
-    :\"kubernetes-dashboard.kube-system.svc.cluster.local\",\n    \"sign_by_k8s_ca\"\
-    :use_k8s_cm,\n    \"subject_alternative_names\":[],\n    \"target_namespace\"\
-    :\"kube-system\",\n    \"secret_info\":{\n      \"type_of_secret\":\"Opaque\"\
-    ,\n      \"cert_name\":\"dashboard.crt\",\n      \"key_name\":\"dashboard.key\"\
-    \n      \n    },\n    \"delete_pods_labels\" : [\"k8s-app=kubernetes-dashboard\"\
-    ]\n  },\n  \"import_into_ks\" : (use_k8s_cm ? \"none\" : \"certificate\"),\n \
-    \ \"name\": \"kubernetes-dashboard\",\n  \"tls_secret_name\":\"kubernetes-dashboard-certs\"\
-    ,\n  \"replace_if_exists\": true\n  \n\n};\n\nou_cr.spec.key_store.key_pairs.keys.push(outls);\n\
-    \n\nprint(\"Saving certificate to keystore\");\n\nou_cr.spec.key_store.static_keys.push({\n\
-    \  \"name\":\"session-unison\",\n  \"version\":1\n});\n\nou_cr.spec.key_store.static_keys.push({\n\
+    :\"kubernetes-dashboard.\" + k8sDashboardNamespace + \".svc.cluster.local\",\n\
+    \    \"sign_by_k8s_ca\":use_k8s_cm,\n    \"subject_alternative_names\":[],\n \
+    \   \"target_namespace\": k8sDashboardNamespace,\n    \"secret_info\":{\n    \
+    \  \"type_of_secret\":\"Opaque\",\n      \"cert_name\":\"dashboard.crt\",\n  \
+    \    \"key_name\":\"dashboard.key\"\n      \n    },\n    \"delete_pods_labels\"\
+    \ : [\"k8s-app=kubernetes-dashboard\"]\n  },\n  \"import_into_ks\" : (use_k8s_cm\
+    \ ? \"none\" : \"certificate\"),\n  \"name\": \"kubernetes-dashboard\",\n  \"\
+    tls_secret_name\":\"kubernetes-dashboard-certs\",\n  \"replace_if_exists\": true\n\
+    \  \n\n};\n\nou_cr.spec.key_store.key_pairs.keys.push(outls);\n\n\nprint(\"Saving\
+    \ certificate to keystore\");\n\nou_cr.spec.key_store.static_keys.push({\n  \"\
+    name\":\"session-unison\",\n  \"version\":1\n});\n\nou_cr.spec.key_store.static_keys.push({\n\
     \  \"name\":\"lastmile-oidc\",\n  \"version\":1\n});\n\n\n\nprint(\"Generating\
     \ OIDC Certificate\");\n\noutls = {\n  \"create_data\" : {\n    \"ca_cert\":true,\n\
     \    \"key_size\":2048,\n    \"server_name\":\"unison-saml2-rp-sig\",\n    \"\
@@ -108,10 +112,7 @@ data:
     \nprint(\"Creating the operator service account\");\n\nk8s_obj = {\n  \"apiVersion\"\
     : \"v1\",\n  \"kind\": \"ServiceAccount\",\n  \"metadata\": {\n    \"name\": \"\
     openunison-operator\"\n  }\n};\n\nk8s.postWS('/api/v1/namespaces/openunison/serviceaccounts',JSON.stringify(k8s_obj));\n\
-    \nk8sDashboardNamespace = \"kube-system\";\n\nif (nonSecretInProp['K8S_DASHBOARD_NAMESPACE']\
-    \ != null) {\n    print(\"Getting k8s dashboard namespace from the configuration\"\
-    );\n    k8sDashboardNamespace = inProp['K8S_DASHBOARD_NAMESPACE'];\n}\n\nobj =\
-    \ {\n    \"kind\": \"Role\",\n    \"apiVersion\": \"rbac.authorization.k8s.io/v1\"\
+    \n\n\nobj = {\n    \"kind\": \"Role\",\n    \"apiVersion\": \"rbac.authorization.k8s.io/v1\"\
     ,\n    \"metadata\": {\n        \"namespace\": k8sDashboardNamespace,\n      \
     \  \"name\": \"orchestra-dashboard\"\n    },\n    \"rules\": [\n        {\n  \
     \          \"apiGroups\": [\n                \"\"\n            ],\n          \

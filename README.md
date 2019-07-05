@@ -65,7 +65,7 @@ AD_BIND_PASSWORD=password
 unisonKeystorePassword=start123
 ```
 
-*Detailed Description or Properties*
+*Detailed Description of Non-Secret Properties*
 
 | Property | Description |
 | -------- | ----------- |
@@ -76,7 +76,6 @@ unisonKeystorePassword=start123
 | AD_HOST | The host name for a domain controller or VIP.  If using SRV records to determine hosts, this should be the fully qualified domain name of the domain |
 | AD_PORT | The port to communicate with Active Directory |
 | AD_BIND_DN | The full distinguished name (DN) of a read-only service account for working with Active Directory |
-| AD_BIND_PASSWORD | The password for the `AD_BIND_DN` |
 | AD_CON_TYPE | `ldaps` for secure, `ldap` for plain text |
 | SRV_DNS | If `true`, OpenUnison will lookup domain controllers by the domain's SRV DNS record |
 | OU_CERT_OU | The `OU` attribute for the forward facing certificate |
@@ -84,11 +83,18 @@ unisonKeystorePassword=start123
 | OU_CERT_L | The `L` attribute for the forward facing certificate |
 | OU_CERT_ST | The `ST` attribute for the forward facing certificate |
 | OU_CERT_C | The `C` attribute for the forward facing certificate |
-| unisonKeystorePassword | The password for OpenUnison's keystore |
 | USE_K8S_CM | Tells the deployment system if you should use k8s' built in certificate manager.  If your distribution doesn't support this (such as Canonical and Rancher), set this to false |
 | SESSION_INACTIVITY_TIMEOUT_SECONDS | The number of seconds of inactivity before the session is terminated, also the length of the refresh token's session |
 | MYVD_CONFIG_PATH | The path to the MyVD configuration file, unless being customized, use `WEB-INF/myvd.conf` |
+| K8S_DASHBOARD_NAMESPACE | **Optional** If specified, the namespace for the dashboard.  For the 1.x dashboard this is `kube-system`, for the 2.x dashboard this is `kubernetes-dashboard` |
+| K8S_CLUSTER_NAME | **Optional** If specified, the name of the cluster to use in the `./kube-config`.  Defaults to `kubernetes` |
 
+*Detailed Description of Secret Properties*
+
+| Property | Description |
+| -------- | ----------- |
+| AD_BIND_PASSWORD | The password for the `AD_BIND_DN` |
+| unisonKeystorePassword | The password for OpenUnison's keystore |
 
 
 ## Deployment

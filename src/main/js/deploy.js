@@ -17,7 +17,12 @@ var CertUtils = Java.type("com.tremolosecurity.kubernetes.artifacts.util.CertUti
 
 print("Creating openunison keystore");
 
+k8sDashboardNamespace = "kube-system";
 
+if (nonSecretInProp['K8S_DASHBOARD_NAMESPACE'] != null) {
+    print("Getting k8s dashboard namespace from the configuration");
+    k8sDashboardNamespace = nonSecretInProp['K8S_DASHBOARD_NAMESPACE'];
+}
 
 
 ksPassword = inProp['unisonKeystorePassword'];
@@ -178,10 +183,10 @@ outls = {
   "create_data" : {
     "ca_cert":(! use_k8s_cm),
     "key_size":2048,
-    "server_name":"kubernetes-dashboard.kube-system.svc.cluster.local",
+    "server_name":"kubernetes-dashboard." + k8sDashboardNamespace + ".svc.cluster.local",
     "sign_by_k8s_ca":use_k8s_cm,
     "subject_alternative_names":[],
-    "target_namespace":"kube-system",
+    "target_namespace": k8sDashboardNamespace,
     "secret_info":{
       "type_of_secret":"Opaque",
       "cert_name":"dashboard.crt",
@@ -341,12 +346,7 @@ k8s_obj = {
 
 k8s.postWS('/api/v1/namespaces/openunison/serviceaccounts',JSON.stringify(k8s_obj));
 
-k8sDashboardNamespace = "kube-system";
 
-if (nonSecretInProp['K8S_DASHBOARD_NAMESPACE'] != null) {
-    print("Getting k8s dashboard namespace from the configuration");
-    k8sDashboardNamespace = inProp['K8S_DASHBOARD_NAMESPACE'];
-}
 
 obj = {
     "kind": "Role",
