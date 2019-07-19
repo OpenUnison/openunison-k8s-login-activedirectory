@@ -13,10 +13,16 @@
     <Logger name="org.reflections"  level="info">
   <AppenderRef ref="STDOUT" level="error"/>
 </Logger>
-<!--
+
 <Logger name="org.apache.http"  level="debug">
   <AppenderRef ref="STDOUT" level="debug"/>
 </Logger>
--->
+
+<Logger name="com.tremolosecurity.proxy.filter.PostProcess"  level="debug">
+    <AppenderRef ref="STDOUT" level="debug"/>
+  </Logger>
+
+
+
   </Loggers>
 </Configuration>
