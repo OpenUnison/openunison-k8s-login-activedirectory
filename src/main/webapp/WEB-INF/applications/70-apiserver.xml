@@ -1,4 +1,4 @@
-<application name="apiserver" azTimeoutMillis="30000" >
+<application name="apiserver" azTimeoutMillis="30000"  useWhen="K8S_IMPERSONATION=true"  >
     <urls>
       <url regex="false" authChain="oauth2jwt" overrideHost="true" overrideReferer="true">
         <host>#[K8S_API_HOST]</host>
