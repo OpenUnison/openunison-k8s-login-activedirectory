@@ -13,7 +13,7 @@
       <uri>/</uri>
       <proxyTo>https://kubernetes-dashboard.#[K8S_DASHBOARD_NAMESPACE:kube-system].svc.cluster.local${fullURI}</proxyTo>
       <results>
-        <azSuccess useWhen="K8S_IMPERSONATION=false">oauth2bearer</azSuccess>
+        <azSuccess useWhen="K8S_IMPERSONATION=false" useDefault="true">oauth2bearer</azSuccess>
       </results>
       <azRules>
         <rule scope="dn" constraint="o=Tremolo" />

@@ -18,10 +18,10 @@
   <AppenderRef ref="STDOUT" level="debug"/>
 </Logger>
 
-<Logger name="com.tremolosecurity.proxy.filter.PostProcess"  level="debug">
+
+<Logger name="com.tremolosecurity.openunison.OpenUnisonConfigManager"  level="debug">
     <AppenderRef ref="STDOUT" level="debug"/>
   </Logger>
-
 -->
 
   </Loggers>
