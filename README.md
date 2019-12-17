@@ -87,6 +87,8 @@ unisonKeystorePassword=start123
 | SESSION_INACTIVITY_TIMEOUT_SECONDS | The number of seconds of inactivity before the session is terminated, also the length of the refresh token's session |
 | MYVD_CONFIG_PATH | The path to the MyVD configuration file, unless being customized, use `WEB-INF/myvd.conf` |
 | K8S_DASHBOARD_NAMESPACE | **Optional** If specified, the namespace for the dashboard.  For the 1.x dashboard this is `kube-system`, for the 2.x dashboard this is `kubernetes-dashboard` |
+| K8S_DASHBOARD_SECRET | **Optional** If specified, the name of the secret used for the dashboard.  By default `kubernetes-dashboard-certs` |
+| K8S_DASHBOARD_LABEL | **Optional** If specified, the label to use when reseting the dashboard for a new cert.  By default `k8s-app=kubernetes-dashboard` |
 | K8S_CLUSTER_NAME | **Optional** If specified, the name of the cluster to use in the `./kube-config`.  Defaults to `kubernetes` |
 
 *Detailed Description of Secret Properties*
