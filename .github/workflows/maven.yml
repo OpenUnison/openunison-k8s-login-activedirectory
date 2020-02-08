@@ -20,4 +20,4 @@ jobs:
         OU_CONTAINER_DEST: ${{ secrets.OU_CONTAINER_DEST }}
         OU_REG_USER: ${{ secrets.OU_REG_USER }}
         OU_REG_PASSWORD: ${{ secrets.OU_REG_PASSWORD }}
-      run: mvn compile jib:build --file pom.xml
+      run: mvn compile jib:build --file pom.xml -Djib.httpTimeout=600000
