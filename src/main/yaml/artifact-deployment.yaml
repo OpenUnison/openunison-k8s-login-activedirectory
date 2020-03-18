@@ -392,6 +392,7 @@ spec:
             mountPath: "/etc/input-maps"
             readOnly: true 
       restartPolicy: Never
+      imagePullPolicy: Always
       volumes:
         - name : secrets-dir
           secret:
