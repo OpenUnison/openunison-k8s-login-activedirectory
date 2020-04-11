@@ -14,7 +14,7 @@
         </repository>
     <repository>
       <id>Tremolo Security Releases</id>
-      <url>https://nexus.tremolo.io/repository/releases/</url>
+      <url>https://nexus.tremolo.io/repository/betas/</url>
     </repository>
   </repositories>
   
@@ -40,7 +40,7 @@
     <dependency>
       <groupId>mysql</groupId>
       <artifactId>mysql-connector-java</artifactId>
-      <version>8.0.8-dmr</version>
+      <version>8.0.19</version>
     </dependency>
     <dependency>
       <groupId>com.tremolosecurity.unison</groupId>

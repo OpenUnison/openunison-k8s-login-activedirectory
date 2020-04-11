@@ -112,6 +112,7 @@ Copy `values.yaml` and update as appropriate:
 | dashboard.service_name | The name of the service object for the dashboard |
 | k8s_cluster_name | The name of the cluster to use in the `./kube-config`.  Defaults to `kubernetes` |
 | image | The name of the image to use |
+| enable_impersonation | If `true`, OpenUnison will run in impersonation mode.  Instead of OpenUnison being integrated with Kubernetes via OIDC, OpenUnison will be a reverse proxy and impersonate users.  This is useful with cloud deployments where oidc is not an option |
 | monitoring.prometheus_service_account | The prometheus service account to authorize access to the /monitoring endpoint |
 
 Additionally, add a base 64 encoded PEM certificate to your values under `trusted_certs` for `pem_b64`.  This will allow OpenUnison to talk to Active Directory using TLS.
