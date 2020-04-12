@@ -1,7 +1,7 @@
 <target name="jitdb" className="com.tremolosecurity.provisioning.providers.K8sCrdUserProvider">
     <params>
         <param name="k8sTarget" value="k8s" />
-        <param name="nameSpace" value="openunison" />
+        <param name="nameSpace" value="#[K8S_OPENUNISON_NS:openunison]" />
     </params>
     <targetAttribute name="first_name" source="first_name" sourceType="user"  />
     <targetAttribute name="last_name" source="last_name" sourceType="user"  />

@@ -24,6 +24,22 @@ if (nonSecretInProp['K8S_DASHBOARD_NAMESPACE'] != null) {
     k8sDashboardNamespace = nonSecretInProp['K8S_DASHBOARD_NAMESPACE'];
 }
 
+k8sDashboardSecret = "kubernetes-dashboard-certs";
+
+if (nonSecretInProp['K8S_DASHBOARD_SECRET'] != null) {
+  print("Getting k8s dashboard secret from the configuration");
+  k8sDashboardSecret = nonSecretInProp['K8S_DASHBOARD_SECRET'];
+}
+
+k8sDashboardDeleteLabel = "k8s-app=kubernetes-dashboard";
+
+if (nonSecretInProp['K8S_DASHBOARD_LABEL'] != null) {
+  print("Getting k8s dashboard label from the configuration");
+  k8sDashboardDeleteLabel = nonSecretInProp['K8S_DASHBOARD_LABEL'];
+}
+
+
+
 
 ksPassword = inProp['unisonKeystorePassword'];
 ouKs = Java.type("java.security.KeyStore").getInstance("PKCS12");
@@ -193,11 +209,11 @@ outls = {
       "key_name":"dashboard.key"
       
     },
-    "delete_pods_labels" : ["k8s-app=kubernetes-dashboard"]
+    "delete_pods_labels" : [k8sDashboardDeleteLabel]
   },
   "import_into_ks" : (use_k8s_cm ? "none" : "certificate"),
   "name": "kubernetes-dashboard",
-  "tls_secret_name":"kubernetes-dashboard-certs",
+  "tls_secret_name":k8sDashboardSecret,
   "replace_if_exists": true
   
 

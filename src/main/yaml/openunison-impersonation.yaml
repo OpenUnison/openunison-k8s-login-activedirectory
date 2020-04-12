@@ -1,0 +1,25 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: impersonator
+rules:
+- apiGroups: [""]
+  resources: ["users", "groups", "serviceaccounts"]
+  verbs: ["impersonate"]
+- apiGroups: ["authentication.k8s.io"]
+  resources: ["userextras/scopes"]
+  verbs: ["impersonate"]
+---
+kind: RoleBinding
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: impersonator
+  namespace: openunison
+subjects:
+- kind: ServiceAccount
+  name: openunison-orchestra
+  namespace: openunison
+roleRef:
+  kind: ClusterRole
+  name: impersonator
+  apiGroup: rbac.authorization.k8s.io
