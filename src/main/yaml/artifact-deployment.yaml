@@ -14,10 +14,17 @@ data:
     print(\"Creating openunison keystore\");\n\nk8sDashboardNamespace = \"kube-system\"\
     ;\n\nif (nonSecretInProp['K8S_DASHBOARD_NAMESPACE'] != null) {\n    print(\"Getting\
     \ k8s dashboard namespace from the configuration\");\n    k8sDashboardNamespace\
-    \ = nonSecretInProp['K8S_DASHBOARD_NAMESPACE'];\n}\n\n\nksPassword = inProp['unisonKeystorePassword'];\n\
-    ouKs = Java.type(\"java.security.KeyStore\").getInstance(\"PKCS12\");\nouKs.load(null,ksPassword.toCharArray());\n\
-    \nuse_k8s_cm = nonSecretInProp['USE_K8S_CM'] == \"true\";\n\n\ninProp['K8S_DB_SECRET']\
-    \ = java.util.UUID.randomUUID().toString();\n\nvar docker_image = 'docker.io/tremolosecurity/openunison-k8s-login-activedirectory:latest';\n\
+    \ = nonSecretInProp['K8S_DASHBOARD_NAMESPACE'];\n}\n\nk8sDashboardSecret = \"\
+    kubernetes-dashboard-certs\";\n\nif (nonSecretInProp['K8S_DASHBOARD_SECRET'] !=\
+    \ null) {\n  print(\"Getting k8s dashboard secret from the configuration\");\n\
+    \  k8sDashboardSecret = nonSecretInProp['K8S_DASHBOARD_SECRET'];\n}\n\nk8sDashboardDeleteLabel\
+    \ = \"k8s-app=kubernetes-dashboard\";\n\nif (nonSecretInProp['K8S_DASHBOARD_LABEL']\
+    \ != null) {\n  print(\"Getting k8s dashboard label from the configuration\");\n\
+    \  k8sDashboardDeleteLabel = nonSecretInProp['K8S_DASHBOARD_LABEL'];\n}\n\n\n\n\
+    \nksPassword = inProp['unisonKeystorePassword'];\nouKs = Java.type(\"java.security.KeyStore\"\
+    ).getInstance(\"PKCS12\");\nouKs.load(null,ksPassword.toCharArray());\n\nuse_k8s_cm\
+    \ = nonSecretInProp['USE_K8S_CM'] == \"true\";\n\n\ninProp['K8S_DB_SECRET'] =\
+    \ java.util.UUID.randomUUID().toString();\n\nvar docker_image = 'docker.io/tremolosecurity/openunison-k8s-login-activedirectory:latest';\n\
     \nif (nonSecretInProp['image'] != null) {\n  docker_image = nonSecretInProp['image'];\n\
     \  delete nonSecretInProp['image'];\n}\n\n\nprint(\"Runing kubectl create\");\n\
     k8s.kubectlCreate(deploymentTemplate);\nprint(\"kubectl complete\");\n\n\n\n\n\
@@ -72,12 +79,11 @@ data:
     \   \"target_namespace\": k8sDashboardNamespace,\n    \"secret_info\":{\n    \
     \  \"type_of_secret\":\"Opaque\",\n      \"cert_name\":\"dashboard.crt\",\n  \
     \    \"key_name\":\"dashboard.key\"\n      \n    },\n    \"delete_pods_labels\"\
-    \ : [\"k8s-app=kubernetes-dashboard\"]\n  },\n  \"import_into_ks\" : (use_k8s_cm\
-    \ ? \"none\" : \"certificate\"),\n  \"name\": \"kubernetes-dashboard\",\n  \"\
-    tls_secret_name\":\"kubernetes-dashboard-certs\",\n  \"replace_if_exists\": true\n\
-    \  \n\n};\n\nou_cr.spec.key_store.key_pairs.keys.push(outls);\n\n\nprint(\"Saving\
-    \ certificate to keystore\");\n\nou_cr.spec.key_store.static_keys.push({\n  \"\
-    name\":\"session-unison\",\n  \"version\":1\n});\n\nou_cr.spec.key_store.static_keys.push({\n\
+    \ : [k8sDashboardDeleteLabel]\n  },\n  \"import_into_ks\" : (use_k8s_cm ? \"none\"\
+    \ : \"certificate\"),\n  \"name\": \"kubernetes-dashboard\",\n  \"tls_secret_name\"\
+    :k8sDashboardSecret,\n  \"replace_if_exists\": true\n  \n\n};\n\nou_cr.spec.key_store.key_pairs.keys.push(outls);\n\
+    \n\nprint(\"Saving certificate to keystore\");\n\nou_cr.spec.key_store.static_keys.push({\n\
+    \  \"name\":\"session-unison\",\n  \"version\":1\n});\n\nou_cr.spec.key_store.static_keys.push({\n\
     \  \"name\":\"lastmile-oidc\",\n  \"version\":1\n});\n\n\n\nprint(\"Generating\
     \ OIDC Certificate\");\n\noutls = {\n  \"create_data\" : {\n    \"ca_cert\":true,\n\
     \    \"key_size\":2048,\n    \"server_name\":\"unison-saml2-rp-sig\",\n    \"\
