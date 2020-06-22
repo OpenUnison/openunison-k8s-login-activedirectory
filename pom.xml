@@ -14,7 +14,7 @@
         </repository>
     <repository>
       <id>Tremolo Security Releases</id>
-      <url>https://nexus.tremolo.io/repository/betas/</url>
+      <url>https://nexus.tremolo.io/repository/releases/</url>
     </repository>
   </repositories>
   
