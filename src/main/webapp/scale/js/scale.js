@@ -920,9 +920,17 @@ limitations under the License.
                     $scope.scale.reportOrgsExpandedNodes = [$scope.scale.reportOrgs[0]];
                     $scope.scale.selectReportOrg($scope.scale.reportOrgsSelectedNode);
 
+                    $scope.scale.portalOrgs = [JSON.parse(JSON.stringify(response.data))];
+                    $scope.scale.portalOrgsSelectedNode = $scope.scale.portalOrgs[0];
+                    $scope.scale.portalOrgsExpandedNodes = [$scope.scale.portalOrgs[0]];
+                    $scope.scale.selectPortalOrgs($scope.scale.portalOrgsSelectedNode);
 
+                    var urlsUrl = 'main/urls';
+                    if ($scope.scale.config.showPortalOrgs) {
+                      urlsUrl = urlsUrl + '/org/' + $scope.scale.portalOrgsSelectedNode.uuid; 
+                    }
 
-                    $http.get('main/urls').then(
+                    $http.get(urlsUrl).then(
                       function(response) {
                         $scope.scale.portalURLs = response.data;
 
