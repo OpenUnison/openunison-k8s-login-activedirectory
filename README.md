@@ -182,6 +182,165 @@ roleRef:
 
 If you can't use Active Directory groups, take a look at the OpenUnison Identity Manager for Kubernetes - https://github.com/TremoloSecurity/openunison-qs-kubernetes/tree/activedirectory.  This tool adds on to the login capabilities with the ability to manage access to the cluster and namespaces, along with providing a self service way for users to request new namespaces and manage access.
 
+# Adding Applications and Clusters for Authentication
+
+OpenUnison can support more applications for SSO then just Kubernetes and the dashboard.  You can add other clusters and applications that support OpenID Connect by adding some custom resources to your `openunison` namespace.
+
+## Add a Trust
+
+The `Trust` tells your OpenID Connect enabled application it can trust authentication requests from your OpenUnison.  To start you'll need:
+
+1. **Callback URL** - This URL is where OpenUnison redirects the user after authenticating.
+2. **Client Secret** - Web applications, like GitLab, will need a secret that is shared between the two systems.  Applications with CLI components, like ArgoCD, don't need a client secret.
+3. **Client ID** - This is how you identify your application to OpenUnison.
+
+OpenUnison will provide the following claims for your application to consume:
+
+| Claim | Description |
+| ----- | ----------- |
+| sub   | Unique identifier as supplied from authentication |
+| name  | Combination of first name and last name |
+| preferred_username | A username supplied from authentication |
+| email | The user's email address |
+| groups | The list of groups provided by the authentication source |
+
+Once you have everything you need to get started, create the `Trust` object.  
+
+### Create a Secret
+
+If you're application is using a client secret, a `Secret` needs to be created to hold it.  This can either be a new `Secret` or it can be a new one.  Which ever `Secret` you add it to, keep a note of the name of the `Secret` and the key in the `data` section used to store it.
+
+If your application doesn't have a client secret, skip this step.
+
+### Create the `Trust`
+
+Create a `Trust` object in the `openunison` namespace.  Here's one for GitLab you can use as an example:
+
+```
+apiVersion: openunison.tremolo.io/v1
+kind: Trust
+metadata:
+  name: gitlab
+  namespace: openunison
+spec:
+  accessTokenSkewMillis: 120000
+  accessTokenTimeToLive: 60000
+  authChainName: LoginService
+  clientId: gitlab
+  clientSecret:
+    keyName: gitlab
+    secretName: orchestra-secrets-source
+  codeLastMileKeyName: lastmile-oidc
+  codeTokenSkewMilis: 60000
+  publicEndpoint: false
+  redirectURI:
+  - https://gitlab.local.tremolo.dev/users/auth/openid_connect/callback
+  signedUserInfo: false
+  verifyRedirect: true
+```
+
+Here are the details for each option:
+
+| Option | Desription |
+| ------ | ---------- |
+| accessTokenSkewMillis | Milliseconds milliseconds added to account for clock skew |
+| accessTokenTimeToLive | Time an access token should live in milliseconds |
+| authChainName | The authentication chain to use for login, do not change |
+| clientId | The client id shared by your application | 
+| clientSecret.scretName | If using a client secret, the name of the `Secret` storing the client secret |
+| clientSecret.keyName | The key in the `data` section of the `Secret` storing the client secret |
+| codeLastMileKeyName | The name of the key used to encrypt the code token, do not change |
+| codeTokenSkewMilis | Milliseconds to add to code token lifetime to account for clock skew |
+| publicEndpoint | If `true`, a client secret is required.  If `false`, no client secret is needed |
+| redirectURI | List of URLs that are authorized for callback.  If a URL is provided by your application that isn't in this list SSO will fail |
+| signedUserInfo | if `true`, the userinfo endpoint will return a signed JSON Web Token.  If `false` it will return plain JSON |
+| verifyRedirect | If `true`, the redirect URL provided by the client **MUST** be listed in the `redirectURI` section.  Should **ALLWAYS** be `true` if not in a development environment |
+
+Once the `Trust` is added to the namespace, OpenUnison will pick it up automatically.  You can test by trying to login to your application.
+
+## Add a "Badge" to Your Portal
+
+When you login to the Orchestra portal, there are badges for your tokens and for the dashboard.  You can dynamically add a badge for your application too.  Here's an example `PortalUrl` object for ArgoCD:
+
+```
+apiVersion: openunison.tremolo.io/v1
+kind: PortalUrl
+metadata:
+  name: argocs
+  namespace: openunison
+spec:
+  label: ArgoCD
+  org: B158BD40-0C1B-11E3-8FFD-0800200C9A66
+  url: https://ArgoCD.apps.192-168-2-140.nip.io
+  icon: iVBORw0KGgoAAAANSUhEUgAAANIAAADwCAYAAAB1/Tp/AAAfQ3pUWHRSYXcgcHJvZ...
+  azRules:
+  - constraint: o=Tremolo
+    scope: dn
+```
+
+| Option | Descriptoin |
+| ------ | ----------- |
+| label  | The label shown on badge in the portal |
+| org    | If using orgnaizations to organize badges, the uuid of the org.  If not using organizations, leave as is |
+| url    | The URL the badge should send the user to |
+| icon   | A base64 encoded icon with a width of 210 pixels and a height of 240 pixels |
+| azRules | Who is authorized to see this badge?  See https://portal.apps.tremolo.io/docs/tremolosecurity-docs/1.0.19/openunison/openunison-manual.html#_applications_applications for an explination of the authorization rules |
+
+Once created, the badge will appear in the Orchestra portal!  No need to restart the containers.
+
+## Organizing Badges
+
+If you're adding multiple badges or clusters, you may find that the number of badges on your front page become difficult to manage.  In that case you can enable orgnaizations in OpenUnison and organize your badges using an orgnaization tree.
+
+### Enable Organizations on your Portal Page
+
+Edit the `orchestra` object in the `openunison` namespace (`kubectl edit openunison orchestra -n openunison`).  Look for the `non_secret_data` section and add the following:
+
+```
+- name: SHOW_PORTAL_ORGS
+  value: "true"
+```
+
+Once you save, OpenUnison will restart and when you login there will now be a tree that describes your organizations.  
+
+![Orchestra with Organizations](imgs/ou_with_orgs.png)
+
+### Creating Organizations
+
+Add an `Org` object to the `openunison` namespace.  Here's an example `Org`:
+
+```
+apiVersion: openunison.tremolo.io/v1
+kind: Org
+metadata:
+  name: cluster2
+  namespace: openunison
+spec:
+  description: "My second cluster"
+  uuid: 04901973-5f4c-46d9-9e22-55e88e168776
+  parent: B158BD40-0C1B-11E3-8FFD-0800200C9A66
+  showInPortal: true
+  showInRequestAccess: false
+  showInReports: false
+  azRules:
+  - scope: dn
+    constraint: o=Tremolo
+```
+
+| Option | Description |
+| ------ | ----------- |
+| description | What appears in the blue box describing the organization |
+| uuid | A unique ID, recommend using Type 4 UUIDs |
+| parent | The unique id of the parent.  `B158BD40-0C1B-11E3-8FFD-0800200C9A66` is the root organization |
+| showInPortal | Should be `true` |
+| showInRequestAccess | N/A |
+| showInReports | N/A |
+| azRules | Who is authorized to see this badge?  See https://portal.apps.tremolo.io/docs/tremolosecurity-docs/1.0.19/openunison/openunison-manual.html#_applications_applications for an explination of the authorization rules |
+
+Once added, the new organizations will be loaded dynamiclly by OpenUnison.  Change the `org` in your `PortalUrl` object to match the `uuid` of the `Org` you want it to appear in.
+
+
+
 # Using Your Own Certificates
 
 If you want to integrate your own certificates see our wiki entry - https://github.com/TremoloSecurity/OpenUnison/wiki/troubleshooting#how-do-i-change-openunisons-certificates

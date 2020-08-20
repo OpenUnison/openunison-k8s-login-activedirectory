@@ -24,6 +24,11 @@
     </workflows>
     
     <org name="Kubernetes Enterprise" description="Kubernetes enterprise deployment" uuid="B158BD40-0C1B-11E3-8FFD-0800200C9A66">
+      <dynamicOrgs enabled="true" className="com.tremolosecurity.provisioning.orgs.LoadOrgsFromK8s">
+        <params name="k8starget" value="k8s" />
+        <params name="namespace" value="#[K8S_OPENUNISON_NS:openunison]" />
+
+      </dynamicOrgs>
             
             <azRules/>
             <orgs name="#[K8S_DEPLOYMENT_NAME:Local Deployment]" description="#[K8S_DEPLOYMENT_DESC:Current Cluster]" uuid="b1bf4c92-7220-4ad2-91af-ee0fe0af7312">
