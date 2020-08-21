@@ -26,9 +26,9 @@
                     
                     <mappings strict="true">
                         <mapping targetAttributeName="sub" targetAttributeSource="sub" sourceType="user"/>
-                        <mapping targetAttributeName="name" targetAttributeSource="${givenname} ${sn}" sourceType="composite"/>
+                        <mapping targetAttributeName="name" targetAttributeSource="${giveName} ${sn}" sourceType="composite"/>
                         <mapping targetAttributeName="preferred_username" targetAttributeSource="uid" sourceType="user"/>
-                        <mapping targetAttributeName="email" targetAttributeSource="email" sourceType="user"/>
+                        <mapping targetAttributeName="email" targetAttributeSource="mail" sourceType="user"/>
                         <mapping targetAttributeName="groups" targetAttributeSource="groups" sourceType="user"/>
                     </mappings>
                     <trusts>
