@@ -20,14 +20,19 @@
                     <params name="sessionStoreClassName" value="com.tremolosecurity.oidc.k8s.K8sSessionStore"/>
                     <params name="k8sTarget" value="k8s" />
                     <params name="k8sNameSpace" value="#[K8S_OPENUNISON_NS:openunison]" />
+                    <params name="trustConfigurationClassName" value="com.tremolosecurity.oidc.k8s.K8sLoadTrusts" />
+                    <params name="trusts.k8starget" value="k8s" />
+                    <params name="trusts.namespace" value="#[K8S_OPENUNISON_NS:openunison]" />
+                    
                     <mappings strict="true">
                         <mapping targetAttributeName="sub" targetAttributeSource="sub" sourceType="user"/>
-                        <mapping targetAttributeName="name" targetAttributeSource="${givenname} ${sn}" sourceType="composite"/>
+                        <mapping targetAttributeName="name" targetAttributeSource="${giveName} ${sn}" sourceType="composite"/>
                         <mapping targetAttributeName="preferred_username" targetAttributeSource="uid" sourceType="user"/>
                         <mapping targetAttributeName="email" targetAttributeSource="mail" sourceType="user"/>
                         <mapping targetAttributeName="groups" targetAttributeSource="groups" sourceType="user"/>
                     </mappings>
                     <trusts>
+                        
                         <trust name="#[K8S_URL]">
                           <param name="clientID" value="kubernetes"/>
                           <param name="clientSecret" value=""/>
@@ -50,6 +55,7 @@
                           <param name="accessTokenTimeToLive" value="60000"/>
                           <param name="accessTokenSkewMillis" value="120000" />
                         </trust>
+                        
                     </trusts>
                 </idp>
             </url>

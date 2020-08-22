@@ -8,7 +8,7 @@
         <mapping targetAttributeName="TREMOLO_USER_ID" sourceType="user" targetAttributeSource="uid"/>
         <mapping targetAttributeName="sub" sourceType="user" targetAttributeSource="uid"/>
         <mapping targetAttributeName="uid" sourceType="user" targetAttributeSource="uid"/>
-        <mapping targetAttributeName="email" sourceType="static" targetAttributeSource="na"/>
+        <mapping targetAttributeName="email" sourceType="custom" targetAttributeSource="com.tremolosecurity.mapping.DefaultEmail"/>
         <mapping targetAttributeName="first_name" sourceType="static" targetAttributeSource="na"/>
         <mapping targetAttributeName="last_name" sourceType="static" targetAttributeSource="na"/>
       </map>
