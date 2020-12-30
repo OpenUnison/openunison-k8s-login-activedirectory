@@ -1,8 +1,8 @@
 <chain level="20" name="k8s-db-oidc">
-<authMech>
-  <name>oidc</name>
-  <required>required</required>
-  <params>
+  <authMech useWhen="K8S_DB_SSO=oidc" useDefault="true">
+    <name>oidc</name>
+    <required>required</required>
+    <params>
       <param name="bearerTokenName" value="k8s-ou" />
       <!-- The client_id supplied by the OP -->
       <param name="clientid" value="openunison" />
@@ -33,8 +33,35 @@
       <param name="jwtTokenAttributeName" value="id_token" />
 
     </params>
-</authMech>
-<authMech>
+  </authMech>
+  <authMech useWhen="K8S_DB_SSO=saml2">
+    <name>SAML2</name>
+    <required>required</required>
+    <params>
+      <param value="https://#[OU_HOST]/auth/idp/k8sdb-saml2/httpPost" name="idpURL" />
+      <param value="https://#[OU_HOST]/auth/idp/k8sdb-saml2/httpRedirect" name="idpRedirURL" />
+      <param value="unison-saml2-rp-sig" name="idpSigKeyName" />
+      <param value="sub" name="ldapAttribute" />
+      <param value="saml2" name="dnOU" />
+      <param value="inetOrgPerson" name="defaultOC" />
+      <param name="authCtxRef" value="urn:oasis:names:tc:SAML:2.0:ac:classes:PasswordProtectedTransport" />
+      <param name="spSigKey" value="unison-saml2-rp-sig" />
+      <param value="https://#[OU_HOST]/logout" name="idpRedirLogoutURL" />
+      <param name="logoutURL" value="" />
+      <param name="sigAlg" value="RSA-SHA256" />
+      <param name="entityID" value="https://#[OU_HOST]/auth/idp/k8sdb-saml2" />
+      <param name="signAuthnReq" value="true" />
+      <param name="assertionsSigned" value="false" />
+      <param name="responsesSigned" value="true" />
+      <param name="assertionEncrypted" value="false" />
+      <param name="spEncKey" value="" />
+      <param name="forceToSSL" value="false" />
+      <param name="jumpPage" value="" />
+      <param name="dontLinkToLDAP" value="false" />
+      <param name="triggerLogoutURL" value="https://#[OU_HOST]/logout" />
+    </params>
+  </authMech>
+  <authMech>
     <name>genoidctoken</name>
     <required>required</required>
     <params>

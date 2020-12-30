@@ -1,0 +1,58 @@
+<application name="k8sdb-saml2" isApp="false" azTimeoutMillis="30000" useWhen="K8S_DB_SSO=saml2">
+    <results />
+    <urls>
+        <url regex="false">
+            <host>#[OU_HOST]</host>
+            <host>127.0.0.1</host>
+            <filterChain />
+            <uri>/auth/idp/k8sdb-saml2</uri>
+            <results>
+                <auSuccess></auSuccess>
+                <auFail>Default Login Failure</auFail>
+                <azSuccess></azSuccess>
+                <azFail>Default Login Failure</azFail>
+            </results>
+            <azRules>
+                <rule scope="dn" constraint="o=Tremolo" />
+            </azRules>
+
+
+            <idp className="com.tremolosecurity.idp.providers.Saml2Idp">
+                <params value="" name="encKey" />
+                <params value="unison-saml2-rp-sig" name="sigKey" />
+                <param name="requireSignedAuthn" value="true" />
+                <param name="postTemplate" value="&lt;html&gt;\n&lt;head&gt;\n&lt;meta http-equiv=\&quot;Content-Type\&quot; content=\&quot;text/html; charset=UTF-8\&quot; /&gt;\n&lt;title&gt;Completing Federation&lt;/title&gt;\n&lt;/head&gt;\n&lt;body onload=\&quot;document.forms[0].submit()\&quot;&gt;\n&lt;form method=\&quot;post\&quot; action=\&quot;$postaction$\&quot;&gt;\n&lt;input name=\&quot;SAMLResponse\&quot; value=\&quot;$postdata$\&quot; type=\&quot;hidden\&quot;/&gt;\n&lt;input name=\&quot;RelayState\&quot; value=\&quot;$relaystate$\&quot; type=\&quot;hidden\&quot;/&gt;\n&lt;/form&gt;\n&lt;center&gt;\n&lt;img src=\&quot;/auth/forms/images/ts_logo.png\&quot; /&gt;&lt;br /&gt;\n&lt;h2&gt;Completing Federation...&lt;/h2&gt;\n&lt;/center&gt;\n&lt;/body&gt;\n&lt;/html&gt;" />
+                <mappings strict="true">
+                    <mapping targetAttributeName="sub" targetAttributeSource="sub" sourceType="user" />
+                    <mapping targetAttributeName="name" targetAttributeSource="${giveName} ${sn}" sourceType="composite" />
+                    <mapping targetAttributeName="preferred_username" targetAttributeSource="uid" sourceType="user" />
+                    <mapping targetAttributeName="email" targetAttributeSource="mail" sourceType="user" />
+                    <mapping targetAttributeName="groups" targetAttributeSource="groups" sourceType="user" />
+                </mappings>
+                <trusts>
+                    <trust name="https://#[K8S_DASHBOARD_HOST]/auth/SAML2Auth">
+                        <param value="https://#[K8S_DASHBOARD_HOST]/auth/SAML2Auth" name="httpPostRespURL" />
+                        <param value="unison-saml2-rp-sig" name="spSigKey" />
+                        <param value="" name="spEncKey" />
+                        <param value="false" name="signAssertion" />
+                        <param value="true" name="signResponse" />
+                        <param value="urn:oasis:names:tc:SAML:1.1:nameid-format:unspecified" name="defaultNameId" />
+                        <param value="urn:oasis:names:tc:SAML:2.0:ac:classes:PasswordProtectedTransport" name="defaultAuthCtx" />
+                        <param value="urn:oasis:names:tc:SAML:1.1:nameid-format:unspecified=sub" name="nameIdMap" />
+                        <param value="urn:oasis:names:tc:SAML:2.0:ac:classes:PasswordProtectedTransport=LoginService" name="authCtxMap" />
+                    </trust>
+                </trusts>
+            </idp>
+        </url>
+    </urls>
+    <cookieConfig>
+        <sessionCookieName>tremolosession</sessionCookieName>
+        <domain>#[OU_HOST]</domain>
+        <scope>-1</scope>
+        <logoutURI>/logout</logoutURI>
+        <keyAlias>session-unison</keyAlias>
+        <secure>true</secure>
+        <httpOnly>true</httpOnly>
+        <timeout>#[SESSION_INACTIVITY_TIMEOUT_SECONDS]</timeout>
+    </cookieConfig>
+</application>
