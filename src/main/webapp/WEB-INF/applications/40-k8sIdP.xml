@@ -40,8 +40,8 @@
                           <param name="redirectURI" value="#[K8S_URL]/redirect_uri"/>
                           <param name="codeLastMileKeyName" value="lastmile-oidc"/>
                           <param name="authChainName" value="LoginService"/>
-                          <param name="codeTokenSkewMilis" value="60000"/>
-                          <param name="accessTokenTimeToLive" value="60000"/>
+                          <param name="codeTokenSkewMilis" value="#[K8S_TOKEN_LIFE_MILLIS:60000]"/>
+                          <param name="accessTokenTimeToLive" value="#[K8S_TOKEN_LIFE_MILLIS:60000]"/>
                           <param name="accessTokenSkewMillis" value="120000" />
                         </trust>
                         <trust name="https://#[K8S_DASHBOARD_HOST]" useWhen="K8S_DB_SSO=oidc" useDefault="true">
@@ -51,8 +51,8 @@
                           <param name="redirectURI" value="https://#[K8S_DASHBOARD_HOST]/auth/oidc"/>
                           <param name="codeLastMileKeyName" value="lastmile-oidc"/>
                           <param name="authChainName" value="LoginService"/>
-                          <param name="codeTokenSkewMilis" value="60000"/>
-                          <param name="accessTokenTimeToLive" value="60000"/>
+                          <param name="codeTokenSkewMilis" value="#[K8S_TOKEN_LIFE_MILLIS:60000]"/>
+                          <param name="accessTokenTimeToLive" value="#[K8S_TOKEN_LIFE_MILLIS:60000]"/>
                           <param name="accessTokenSkewMillis" value="120000" />
                         </trust>
                         
