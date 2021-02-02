@@ -11,7 +11,7 @@
           </filter>
       </filterChain>
       <uri>/</uri>
-      <proxyTo>https://kubernetes-dashboard.#[K8S_DASHBOARD_NAMESPACE:kube-system].svc.cluster.local${fullURI}</proxyTo>
+      <proxyTo>https://#[K8S_DASHBOARD_SERVICE:kubernetes-dashboard].#[K8S_DASHBOARD_NAMESPACE:kube-system].svc${fullURI}</proxyTo>
       <results>
         <azSuccess useWhen="K8S_IMPERSONATION=false" useDefault="true">oauth2bearer</azSuccess>
       </results>

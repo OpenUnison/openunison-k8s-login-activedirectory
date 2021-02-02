@@ -93,6 +93,9 @@ Copy `values.yaml` (https://raw.githubusercontent.com/OpenUnison/helm-charts/mas
 | network.api_server_host | The host name to use for the api server reverse proxy.  This is what `kubectl` will interact with to access your cluster. **NOTE:** `network.openunison_host` and `network.dashboard_host` |
 | network.k8s_url | The URL for the Kubernetes API server | 
 | network.session_inactivity_timeout_seconds | The number of seconds of inactivity before the session is terminated, also the length of the refresh token's session |
+| network.createIngressCertificate | If true (default), the operator will create a self signed Ingress certificate.  Set to false if using an existing certificate or LetsEncrypt |
+| network.ingress_type | The type of `Ingress` object to create.  Right now only `nginx` is supported |
+| network.ingress_annotations | Annotations to add to the `Ingress` object |
 | active_directory.base | The search base for Active Directory |
 | active_directory.host | The host name for a domain controller or VIP.  If using SRV records to determine hosts, this should be the fully qualified domain name of the domain |
 | active_directory.port | The port to communicate with Active Directory |
@@ -114,6 +117,25 @@ Copy `values.yaml` (https://raw.githubusercontent.com/OpenUnison/helm-charts/mas
 | image | The name of the image to use |
 | enable_impersonation | If `true`, OpenUnison will run in impersonation mode.  Instead of OpenUnison being integrated with Kubernetes via OIDC, OpenUnison will be a reverse proxy and impersonate users.  This is useful with cloud deployments where oidc is not an option |
 | monitoring.prometheus_service_account | The prometheus service account to authorize access to the /monitoring endpoint |
+| network_policies.enabled | If `true`, creates a deny-all network policy and additional policies based on below configurations |
+| network_policies.ingress.enabled | if `true`, a policy will be created that allows access from the `Namespace` identified by the `labels` |
+| network_policies.ingress.labels | Labels for the `Namespace` hosting the `Ingress` |
+| network_policies.monitoring.enabled | if `true`, a policy will be created that allows access from the `Namespace` identified by the `labels` to support monitoring |
+| network_policies.monitoring.labels | Labels for the `Namespace` hosting monitoring |
+| network_policies.apiserver.enabled | if `true`, a policy will be created that allows access from the `kube-ns` `Namespace` identified by the `labels` |
+| network_policies.apiserver.labels | Labels for the `Namespace` hosting the api server |
+| services.enable_tokenrequest | If `true`, the OpenUnison `Deployment` will use the `TokenRequest` API instead of static `ServiceAccount` tokens.  *** NOT AVAILABLE UNTIL OPENUNISON 1.0.21 *** |
+| services.token_request_audience | The audience expected by the API server *** NOT AVAILABLE UNTIL OPENUNISON 1.0.21 *** |
+| services.token_request_expiration_seconds | The number of seconds TokenRequest tokens should be valid for, minimum 600 seconds *** NOT AVAILABLE UNTIL OPENUNISON 1.0.21 *** | 
+| services.node_selectors | annotations to use when choosing nodes to run OpenUnison, maps to the `Deployment` `nodeSelector` |
+| services.pullSecret | The name of the `Secret` that stores the pull secret for pulling the OpenUnison image |
+| services.resources.requests.memory | Memory requested by OpenUnison |
+| services.resources.requests.cpu | CPU requested by OpenUnison |
+| services.resources.limits.memory | Maximum memory allocated to OpenUnison |
+| services.resources.limits.cpu | Maximum CPU allocated to OpenUnison |
+| openunison.replicas | The number of OpenUnison replicas to run, defaults to 1 |
+| openunison.non_secret_data | Add additional non-secret configuration options, added to the `non_secret_data` secrtion of the `OpenUnison` object |
+| openunison.secrets | Add additional keys from the `orchestra-secrets-source` `Secret` |
 
 Additionally, add a base 64 encoded PEM certificate to your values under `trusted_certs` for `pem_b64`.  This will allow OpenUnison to talk to Active Directory using TLS.
 
@@ -454,3 +476,7 @@ This will trigger the operator to update your OpenUnison pods.  To update certif
 # Customizing Orchestra
 
 To customize Orchestra - https://github.com/TremoloSecurity/OpenUnison/wiki/troubleshooting#customizing-orchestra
+
+# Example Implementations
+Amazon EKS - https://www.tremolosecurity.com/post/multi-tenant-amazon-eks-the-easy-way-part-i-authentication
+Multi-Cluster Portal - https://www.tremolosecurity.com/post/building-a-multi-cluster-authentication-portal
