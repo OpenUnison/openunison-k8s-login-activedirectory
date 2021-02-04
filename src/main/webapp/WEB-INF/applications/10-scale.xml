@@ -78,7 +78,8 @@
     <url regex="false" authChain="LoginService" overrideHost="true" overrideReferer="true">
       <host>#[OU_HOST]</host>
       <filterChain>
-
+        <filter class="com.tremolosecurity.proxy.filters.SetNoCacheHeaders">
+        </filter>
       </filterChain>
       <uri>/scale</uri>
 
@@ -132,7 +133,8 @@
             <url regex="false" authChain="LoginService" overrideHost="false" overrideReferer="false">
                 <host>#[OU_HOST]</host>
                 <filterChain>
-
+                  <filter class="com.tremolosecurity.proxy.filters.SetNoCacheHeaders">
+                  </filter>
                 </filterChain>
                 <uri>/k8stoken</uri>
 
@@ -150,6 +152,8 @@
             <url regex="false" authChain="LoginService" overrideHost="false" overrideReferer="false">
                 <host>#[OU_HOST]</host>
                 <filterChain>
+                  <filter class="com.tremolosecurity.proxy.filters.SetNoCacheHeaders">
+                  </filter>
                   <filter class="com.tremolosecurity.scalejs.token.ws.ScaleToken">
                   <param name="displayNameAttribute" value="sub"/>
                   <param name="frontPage.title" value="Kubernetes kubectl command"/>
