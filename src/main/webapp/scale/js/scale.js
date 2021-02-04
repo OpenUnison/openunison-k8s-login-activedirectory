@@ -202,6 +202,7 @@ limitations under the License.
       this.currentReport = {};
       this.reportData = {};
       this.portalOrgs = [];
+      this.portalURLs = [];
 
 
       this.rowNumber = 0;
@@ -493,17 +494,20 @@ limitations under the License.
       };
 
       this.selectPortalOrgs = function(node) {
-        this.portalCurrentNode = node;
+        if ($scope.scale.config.showPortalOrgs) {
+          this.portalCurrentNode = node;
+          
+          $http.get('main/urls/org/' + encodeURIComponent(node.id)).then(
+            function(response) {
+              
+              $scope.scale.portalURLs = response.data;
 
-        $http.get('main/urls/org/' + encodeURIComponent(node.id)).then(
-          function(response) {
-            $scope.scale.portalURLs = response.data;
+            },
+            function(response) {
 
-          },
-          function(response) {
-
-          }
-        );
+            }
+          );
+        }
 
       };
 
@@ -898,63 +902,74 @@ limitations under the License.
     			}, 1000 * 60
     	);  
     	  
+      $scope.scale.portalURLs = [];
+
         $http.get('main/config').
           then(function(response){
             $scope.scale.config = response.data;
             
 
-            $http.get('main/user').
-              then(function(response) {
-                $scope.scale.user = response.data;
-                $scope.scale.loadAttributes();
+            
 
-                $http.get('main/orgs').
-                  then(function(response) {
-                    $scope.scale.orgs = [response.data];
-                    $scope.scale.requestAccessOrgsSelectedNode = $scope.scale.orgs[0];
-                    $scope.scale.requestAccessOrgsExpandedNodes =[$scope.scale.orgs[0]];
-                    $scope.scale.selectRequestAccessOrg($scope.scale.orgs[0]);
+              $http.get('main/orgs').
+                then(function(response) {
+                  $scope.scale.orgs = [response.data];
+                  $scope.scale.requestAccessOrgsSelectedNode = $scope.scale.orgs[0];
+                  $scope.scale.requestAccessOrgsExpandedNodes =[$scope.scale.orgs[0]];
+                  $scope.scale.selectRequestAccessOrg($scope.scale.orgs[0]);
 
-                    $scope.scale.reportOrgs = [JSON.parse(JSON.stringify(response.data))];
-                    $scope.scale.reportOrgsSelectedNode = $scope.scale.reportOrgs[0];
-                    $scope.scale.reportOrgsExpandedNodes = [$scope.scale.reportOrgs[0]];
-                    $scope.scale.selectReportOrg($scope.scale.reportOrgsSelectedNode);
+                  $scope.scale.reportOrgs = [JSON.parse(JSON.stringify(response.data))];
+                  $scope.scale.reportOrgsSelectedNode = $scope.scale.reportOrgs[0];
+                  $scope.scale.reportOrgsExpandedNodes = [$scope.scale.reportOrgs[0]];
+                  $scope.scale.selectReportOrg($scope.scale.reportOrgsSelectedNode);
 
-                    $scope.scale.portalOrgs = [JSON.parse(JSON.stringify(response.data))];
-                    $scope.scale.portalOrgsSelectedNode = $scope.scale.portalOrgs[0];
-                    $scope.scale.portalOrgsExpandedNodes = [$scope.scale.portalOrgs[0]];
-                    $scope.scale.selectPortalOrgs($scope.scale.portalOrgsSelectedNode);
+                  $scope.scale.portalOrgs = [JSON.parse(JSON.stringify(response.data))];
+                  $scope.scale.portalOrgsSelectedNode = $scope.scale.portalOrgs[0];
+                  $scope.scale.portalOrgsExpandedNodes = [$scope.scale.portalOrgs[0]];
+                  $scope.scale.selectPortalOrgs($scope.scale.portalOrgsSelectedNode);
 
-                    var urlsUrl = 'main/urls';
-                    if ($scope.scale.config.showPortalOrgs) {
-                      urlsUrl = urlsUrl + '/org/' + $scope.scale.portalOrgsSelectedNode.uuid; 
-                    }
-
-                    $http.get(urlsUrl).then(
-                      function(response) {
-                        $scope.scale.portalURLs = response.data;
-
-                        $scope.scale.setSessionLoadedComplete();
-                        //$scope.$apply();
-
-                      },
-                      function(response) {
-                        $scope.scale.setSessionLoadedComplete();
-                        //$scope.$apply();
-                      }
-                    );
-                  },
-                  function(response) {
-                    $scope.scale.appIsError = true;
-                    //$scope.$apply();
+                  var urlsUrl = 'main/urls';
+                  if ($scope.scale.config.showPortalOrgs) {
+                    urlsUrl = urlsUrl + '/org/' + $scope.scale.portalOrgsSelectedNode.uuid; 
                   }
-                )
+
+                  $http.get(urlsUrl).then(
+                    function(response) {
+                      $scope.scale.portalURLs = response.data;
+                     
+                      $http.get('main/user').
+                        then(function(response) {
+                          $scope.scale.user = response.data;
+                          $scope.scale.loadAttributes();
+                          $scope.scale.setSessionLoadedComplete();
+                          
 
 
-              },function(response){
-                $scope.scale.appIsError = true;
-                //$scope.$apply();
-              });
+                        },function(response){
+                          $scope.scale.appIsError = true;
+                          //$scope.$apply();
+                      });
+                      
+                      
+                      
+
+
+                      
+
+                    },
+                    function(response) {
+                      $scope.scale.setSessionLoadedComplete();
+                      //$scope.$apply();
+                    }
+                  );
+                },
+                function(response) {
+                  $scope.scale.appIsError = true;
+                  //$scope.$apply();
+                }
+              );
+
+              
           },function(response){
             $scope.scale.appIsError = true;
             //$scope.$apply();
