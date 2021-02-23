@@ -23,7 +23,7 @@
   
     </urls>
     <cookieConfig>
-      <sessionCookieName>anon</sessionCookieName>
+      <sessionCookieName>k8s-api-server</sessionCookieName>
       <domain>#[K8S_API_HOST]</domain>
       <logoutURI>/</logoutURI>
       <keyAlias>session-unison</keyAlias>
@@ -31,6 +31,6 @@
       <httpOnly>true</httpOnly>
       <timeout>1</timeout>
       <scope>-1</scope>
+      <cookiesEnabled>false</cookiesEnabled>
     </cookieConfig>
   </application>
-  
