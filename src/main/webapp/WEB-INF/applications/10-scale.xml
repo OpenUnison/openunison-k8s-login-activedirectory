@@ -133,7 +133,8 @@
             <url regex="false" authChain="LoginService" overrideHost="false" overrideReferer="false">
                 <host>#[OU_HOST]</host>
                 <filterChain>
-
+                  <filter class="com.tremolosecurity.proxy.filters.SetNoCacheHeaders">
+                  </filter>
                 </filterChain>
                 <uri>/k8stoken</uri>
 
