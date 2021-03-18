@@ -56,7 +56,7 @@ limitations under the License.
 <body>
 <div class="container">
 <div class="login-header">
-			<h3>Logged Out of Unison</h3>	
+			<h3>Logged in to Unison</h3>	
 		</div>
 		<div class="jumbotron">
 			<img src="<%= authURL %>images/ts_logo.png" />

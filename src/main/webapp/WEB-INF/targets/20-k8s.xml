@@ -5,5 +5,9 @@
         <param name="password" value=""/>
         <param name="token" value=""/>
         <param name="useToken" value="true"/>
+        <param name="tokenType" value="#[K8S_TOKEN_TYPE]" />
+        <param name="tokenPath" value="/var/run/secrets/tokens/ou-token" />
+        <param name="certPath" value="/var/run/secrets/tokens/ca.crt" />
+        <param name="label" value="#[K8S_DEPLOYMENT_NAME:Local Deployment]" />
     </params>
 </target>

@@ -54,5 +54,6 @@
         <secure>true</secure>
         <httpOnly>true</httpOnly>
         <timeout>#[SESSION_INACTIVITY_TIMEOUT_SECONDS]</timeout>
+        <sameSite>None</sameSite>
     </cookieConfig>
 </application>
