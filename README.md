@@ -94,8 +94,11 @@ Copy `values.yaml` (https://raw.githubusercontent.com/OpenUnison/helm-charts/mas
 | network.k8s_url | The URL for the Kubernetes API server | 
 | network.session_inactivity_timeout_seconds | The number of seconds of inactivity before the session is terminated, also the length of the refresh token's session |
 | network.createIngressCertificate | If true (default), the operator will create a self signed Ingress certificate.  Set to false if using an existing certificate or LetsEncrypt |
-| network.ingress_type | The type of `Ingress` object to create.  Right now only `nginx` is supported |
+| network.force_redirect_to_tls | If `true`, all traffic that reaches OpenUnison over http will be redirected to https.  Defaults to `true`.  Set to `false` when using an external TLS termination point, such as an istio sidecar proxy |
+| network.ingress_type | The type of `Ingress` object to create.  `nginx` and [istio](https://openunison.github.io/ingresses/istio/) is supported |
 | network.ingress_annotations | Annotations to add to the `Ingress` object |
+| network.ingress_certificate | The certificate that the `Ingress` object should reference |
+| network.istio.selectors | Labels that the istio `Gateway` object will be applied to.  Default is `istio: ingressgateway` |
 | active_directory.base | The search base for Active Directory |
 | active_directory.host | The host name for a domain controller or VIP.  If using SRV records to determine hosts, this should be the fully qualified domain name of the domain |
 | active_directory.port | The port to communicate with Active Directory |
@@ -144,6 +147,7 @@ Copy `values.yaml` (https://raw.githubusercontent.com/OpenUnison/helm-charts/mas
 | impersonation.resources.requests.cpu | CPU requested by oidc proxy |
 | impersonation.resources.limits.memory | Maximum memory allocated to oidc proxy |
 | impersonation.resources.limits.cpu | Maximum CPU allocated to oidc proxy |
+| myvd_configmap | The name of a `ConfigMap` with a key called `myvd.conf` that will override the MyVD configuration |
 
 Additionally, add a base 64 encoded PEM certificate to your values under `trusted_certs` for `pem_b64`.  This will allow OpenUnison to talk to Active Directory using TLS.
 
@@ -475,13 +479,13 @@ server.activedirectory.ldap.config.type=#[AD_CON_TYPE]
 server.activedirectory.ldap.config.sslSocketFactory=com.tremolosecurity.proxy.ssl.TremoloSSLSocketFactory
 ```
 
-Once OpenUnison is deployed, create a directory with your `myvd.conf` file in it and deploy it as a `ConfigMap`:
+Create a directory with your `myvd.conf` file in it and deploy it as a `ConfigMap`:
 
 ```
 kubectl create configmap myvd --from-file . -n openunison
 ```
 
-Next edit the `openunison` deployment to mount the `ConfigMap` to `/etc/myvd` and change the environment variable `MYVD_CONFIG_PATH` to `/etc/myvd/myvd.conf`.  Once the OpenUnison pods have been recreated, you can login with your LDAP uid (as opposed to an Active Directory samAccountName).
+Finally, set `myvd_configmap` to the name of your `ConfigMap` in your `values.yaml` and update your helm deployment.
 
 # Updating Secrets and Certificates
 
