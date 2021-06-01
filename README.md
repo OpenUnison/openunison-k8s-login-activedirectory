@@ -160,6 +160,10 @@ Finally, run the helm chart:
 
 If using impersonation, you can skip this section.  Run `kubectl describe configmap api-server-config -n openunison` to get the SSO integration artifacts.  The output will give you both the API server flags that need to be configured on your API servers.  The certificate that needs to be trusted is in the `ou-tls-certificate` secret in the `openunison` namespace.
 
+Copy the certificate to a file on your master nodes such as ```/etc/kubernetes/pki/ou-ca.pem```
+
+Then add the parameters to ```/etc/kubernetes/manifests/kube-apiserver.yaml``` on your master nodes using the certificate file location above.  The kube-apiservers will automatically restart.
+
 ## First Login
 
 To login, open your browser and go to the host you specified for `network.openunison_host` in your `values.yaml`.  For instance if `network.openunison_host` is `k8sou.tremolo.lan` then navigate to https://k8sou.tremolo.lan.  You'll be prompted for your Active Directory username and password.  Once authenticated you'll be able login to the portal and generate your `.kube/config` from the Tokens screen.
