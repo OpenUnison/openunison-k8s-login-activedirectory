@@ -1,5 +1,12 @@
 # Orchestra Login Portal for ActiveDirectory
 
+>  :warning:
+>
+>  Please go to https://openunison.github.io/ to integrate your cluster with OpenUnison.  This repo has been deprecated. 
+>  It will continue to be updated until 12/30/2022, however new features will **not** be added to this repo.
+>
+>  :warning:
+
 [![Alt text](https://i.vimeocdn.com/video/735154945_640.webp)](https://vimeo.com/297400302)
 
 *Short video of logging into Kubernetes and using kubectl using Active Directory*
