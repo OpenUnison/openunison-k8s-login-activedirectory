@@ -77,7 +77,7 @@
             <job className="com.tremolosecurity.idp.providers.oidc.model.jobs.ClearSessions" name="clearSessions" group="admin">
             <cronSchedule
                 seconds="0"
-                minutes="0/1"
+                minutes="*"
                 hours="*"
                 dayOfMonth="*"
                 month="*"
