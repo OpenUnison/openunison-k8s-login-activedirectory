@@ -4,7 +4,7 @@
   <groupId>io.openunison</groupId>
   <artifactId>openunison-k8s-login-activedirectory</artifactId>
   <packaging>war</packaging>
-  <version>1.0.24</version>
+  <version>1.0.25</version>
   <name>openunison-k8s-login-activedirectory</name>
   <url>http://openunison.io</url>
   <repositories>
@@ -22,7 +22,7 @@
     <dependency>
       <groupId>com.tremolosecurity.unison</groupId>
       <artifactId>openunison-on-undertow</artifactId>
-      <version>1.0.24</version>
+      <version>1.0.25</version>
       <exclusions>
 				<exclusion>
 					<groupId>com.tremolosecurity.myvd</groupId>
@@ -33,40 +33,20 @@
     <dependency>
       <groupId>com.tremolosecurity.unison</groupId>
       <artifactId>open-unison-webapp</artifactId>
-      <version>1.0.24</version>
+      <version>1.0.25</version>
       <type>war</type>
       <scope>runtime</scope>
     </dependency>
     <dependency>
       <groupId>com.tremolosecurity.unison</groupId>
       <artifactId>open-unison-webapp</artifactId>
-      <version>1.0.24</version>
+      <version>1.0.25</version>
       <type>pom</type>
     </dependency>
     <dependency>
       <groupId>com.tremolosecurity.unison</groupId>
       <artifactId>unison-scalejs-main</artifactId>
-      <version>1.0.24</version>
-    </dependency>
-    <dependency>
-      <groupId>org.apache.logging.log4j</groupId>
-      <artifactId>log4j-core</artifactId>
-      <version>2.17.0</version>
-    </dependency>
-    <dependency>
-      <groupId>org.apache.logging.log4j</groupId>
-      <artifactId>log4j-api</artifactId>
-      <version>2.17.0</version>
-    </dependency>
-    <dependency>
-      <groupId>org.apache.logging.log4j</groupId>
-      <artifactId>log4j-slf4j-impl</artifactId>
-      <version>2.17.0</version>
-    </dependency>
-    <dependency>
-      <groupId>org.apache.logging.log4j</groupId>
-      <artifactId>log4j-1.2-api</artifactId>
-      <version>2.17.0</version>
+      <version>1.0.25</version>
     </dependency>
   </dependencies>
   <build>
@@ -96,7 +76,7 @@
       <plugin>
         <groupId>com.google.cloud.tools</groupId>
         <artifactId>jib-maven-plugin</artifactId>
-        <version>3.1.4</version>
+        <version>3.2.0</version>
         <configuration>
           <from>
             <image>tremolosecurity/openunison-jib-builder:latest</image>
