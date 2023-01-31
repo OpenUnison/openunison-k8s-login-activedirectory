@@ -2,8 +2,7 @@
 
 >  :warning:
 >
->  Please go to https://openunison.github.io/ to integrate your cluster with OpenUnison.  This repo has been deprecated. 
->  It will continue to be updated until 12/30/2022, however new features will **not** be added to this repo.
+>  Please go to https://openunison.github.io/ to integrate your cluster with OpenUnison.  This repo is no longer supported and will no longer get updated builds
 >
 >  :warning:
 
